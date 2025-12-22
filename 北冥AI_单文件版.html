@@ -1,0 +1,3753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北</title>
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ==================== 基础样式 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --wechat-green: #07c160;      /* 微信绿 */
+            --wechat-bg: #ededed;         /* 微信背景灰 */
+            --wechat-bubble-ai: #ffffff;  /* AI气泡白 */
+            --wechat-bubble-user: #95ec69;/* 用户气泡绿 */
+            --wechat-text-dark: #000000;
+            --wechat-text-light: #888888;
+            --wechat-border: #e5e5e5;
+            --wechat-radius: 6px;         /* 气泡圆角 */
+            --wechat-avatar-radius: 6px;  /* 头像方形圆角 */
+            --settings-width: 320px;      /* 设置面板宽度 */
+            --transition-speed: 0.3s;     /* 过渡速度 */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 
+                         "Segoe UI", "PingFang SC", "Hiragino Sans GB", 
+                         "Microsoft YaHei", sans-serif;
+            background: var(--wechat-bg);
+            height: 100vh;
+            color: var(--wechat-text-dark);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ==================== 主容器 ==================== */
+        .main-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        /* 聊天页面 */
+        .chat-page {
+            flex: 1;
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        /* 设置页面侧滑效果 */
+        .settings-open .chat-page {
+            transform: translateX(calc(-1 * var(--settings-width)));
+            box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+        }
+
+        /* ==================== 微信顶部导航 ==================== */
+        .wechat-header {
+            background: var(--wechat-green);
+            padding: 10px 15px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .wechat-header .header-left,
+        .wechat-header .header-right {
+            width: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .wechat-header .header-center {
+            flex: 1;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 500;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .wechat-header .back-btn {
+            color: white;
+            font-size: 18px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .wechat-header .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ==================== 微信聊天内容区 ==================== */
+        .wechat-chat-content {
+            flex: 1;
+            padding: 10px;
+            background: var(--wechat-bg);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.03"><path d="M50,0 L100,50 L50,100 L0,50 Z" fill="%23000000"/></svg>');
+            background-size: 100px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* 聊天背景覆盖层 */
+        .chat-bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 聊天内容区（在背景之上） */
+        .chat-content-wrapper {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 微信时间标签 */
+        .wechat-time-tag {
+            text-align: center;
+            color: var(--wechat-text-light);
+            font-size: 12px;
+            margin: 20px auto;
+            padding: 5px 15px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 15px;
+            display: inline-block;
+            align-self: center;
+        }
+
+        /* ==================== 微信头像样式 ==================== */
+        .wechat-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--wechat-avatar-radius);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.1);
+            align-self: flex-start;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .wechat-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-default-icon {
+            font-size: 20px;
+        }
+
+        /* ==================== 微信气泡样式（修复版） ==================== */
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            position: relative;
+            max-width: 100%;
+            animation: messageIn 0.3s ease;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* AI消息：靠左对齐 */
+        .message-ai {
+            justify-content: flex-start;
+        }
+
+        /* 用户消息：靠右对齐 */
+.message-user {
+    justify-content: flex-end; /* 这行保证用户消息整体在右边 */
+}
+
+        /* 消息内容容器 - 修复布局 */
+        .message-content-wrapper {
+            display: flex;
+            align-items: flex-start;
+            max-width: 75%;
+            position: relative;
+        }
+
+        /* AI消息布局：头像在左，气泡在右 */
+        .message-ai .message-content-wrapper {
+            flex-direction: row;
+        }
+
+        /* 用户消息布局：头像在右，气泡在左  */
+        .message-user .message-content-wrapper {
+            flex-direction: row-reverse;
+        }
+
+        /* 微信气泡基础样式 */
+        .message-bubble {
+            max-width: 100%;
+            padding: 10px 14px;
+            line-height: 1.4;
+            font-size: 16px;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            min-width: 40px;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: var(--wechat-radius);
+            white-space: pre-wrap;
+        }
+
+        /* AI气泡（白色）- 左上角有小尖尖 */
+        .message-ai .message-bubble {
+            background: var(--wechat-bubble-ai);
+            color: var(--wechat-text-dark);
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: var(--wechat-radius);
+            border-bottom-right-radius: var(--wechat-radius);
+            border-top-right-radius: var(--wechat-radius);
+            margin-left: 12px;
+            margin-right: 10px;
+        }
+
+        /* AI气泡小尖尖（指向左边的头像） */
+        .message-ai .message-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 10px solid var(--wechat-bubble-ai);
+            border-left: 0;
+            z-index: 1;
+        }
+
+        /* AI气泡小尖尖的阴影 */
+        .message-ai .message-bubble::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 10px solid rgba(0,0,0,0.1);
+            border-left: 0;
+            z-index: 0;
+            filter: blur(1px);
+        }
+
+        /* 用户气泡（绿色）- 右上角有小尖尖 */
+        .message-user .message-bubble {
+            background: var(--wechat-bubble-user);
+            color: #000000;
+            border-top-right-radius: 4px;
+            border-bottom-left-radius: var(--wechat-radius);
+            border-bottom-right-radius: var(--wechat-radius);
+            border-top-left-radius: var(--wechat-radius);
+            margin-right: 12px;
+            margin-left: 10px;
+        }
+
+        /* 用户气泡小尖尖（指向右边的头像） */
+        .message-user .message-bubble::before {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 10px solid var(--wechat-bubble-user);
+            border-right: 0;
+            z-index: 1;
+        }
+
+        /* 用户气泡小尖尖的阴影 */
+        .message-user .message-bubble::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 10px solid rgba(0,0,0,0.1);
+            border-right: 0;
+            z-index: 0;
+            filter: blur(1px);
+        }
+
+        /* 图片消息样式 */
+        .message-image {
+            max-width: 220px;
+            max-height: 300px;
+            border-radius: var(--wechat-radius);
+            margin: 8px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: block;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .message-image:hover {
+            transform: scale(1.02);
+        }
+
+        /* 表情包消息样式 */
+        .sticker-message {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .sticker-keyword {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* ==================== 微信输入区域 ==================== */
+        .wechat-input-area {
+            background: white;
+            padding: 10px 15px;
+            border-top: 1px solid var(--wechat-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            min-height: 56px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        /* 输入框包装 */
+        .wechat-input-wrapper {
+            flex: 1;
+            position: relative;
+            min-width: 0;
+        }
+
+        /* 微信输入框 */
+        .wechat-input {
+            width: 100%;
+            padding: 8px 15px;
+            border: 1px solid var(--wechat-border);
+            border-radius: 18px;
+            font-size: 16px;
+            background: #f0f0f0;
+            outline: none;
+            transition: all 0.2s;
+            min-width: 0;
+        }
+
+        .wechat-input:focus {
+            background: white;
+            border-color: var(--wechat-green);
+        }
+
+        .wechat-input::placeholder {
+            color: #999;
+        }
+
+        /* 微信按钮样式 */
+        .wechat-btn {
+            padding: 8px 16px;
+            background: var(--wechat-green);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .wechat-btn:hover {
+            background: #06ad56;
+            transform: translateY(-1px);
+        }
+
+        .wechat-btn:active {
+            transform: translateY(0);
+        }
+
+        .wechat-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* 小圆形按钮 */
+        .wechat-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #555;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .wechat-icon-btn:hover {
+            background: #f0f0f0;
+        }
+
+        /* 发送按钮 */
+        .wechat-send-btn {
+            padding: 8px 16px;
+            background: var(--wechat-green);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .wechat-send-btn:hover {
+            background: #06ad56;
+        }
+
+        /* ==================== API密钥输入栏样式 ==================== */
+        .api-key-bar {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 12px 20px;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 9999;
+            position: sticky;
+            top: 0;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .api-key-label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .api-key-input {
+            flex-grow: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            border: 2px solid #07c160;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.9);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .api-key-input:focus {
+            background: white;
+            box-shadow: 0 0 10px rgba(7, 193, 96, 0.5);
+        }
+
+        .api-key-btn {
+            padding: 10px 20px;
+            background: #07c160;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .api-key-btn:hover {
+            background: #06ad56;
+            transform: translateY(-1px);
+        }
+
+        .api-key-status {
+            font-size: 13px;
+            color: #95ec69;
+            min-width: 120px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* ==================== 设置页面样式 ==================== */
+        .settings-page {
+            width: var(--settings-width);
+            height: 100%;
+            background: white;
+            position: absolute;
+            right: calc(-1 * var(--settings-width));
+            top: 0;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: right var(--transition-speed) ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-open .settings-page {
+            right: 0;
+        }
+
+        .settings-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .settings-header h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-header h2 i {
+            font-size: 20px;
+        }
+
+        .close-settings-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .close-settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .settings-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* ==================== 设置卡片样式 ==================== */
+        .setting-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--wechat-green);
+            font-size: 18px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-label i {
+            margin-right: 8px;
+            color: #777;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--wechat-green);
+            box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.1);
+        }
+
+        textarea.input-field {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        /* ==================== 头像上传样式 ==================== */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e5e5e5;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-upload-btns {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .avatar-upload-btn {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .avatar-upload-btn:hover {
+            background: #e9ecef;
+            border-color: #d0d7de;
+        }
+
+        .avatar-upload-btn i {
+            font-size: 16px;
+        }
+
+        .avatar-color-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .color-label {
+            min-width: 100px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .color-picker-input {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ==================== 背景选择样式 ==================== */
+        .bg-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .bg-option {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .bg-option:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .bg-option.selected {
+            border-color: var(--wechat-green);
+            box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.2);
+        }
+
+        .bg-check {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background: var(--wechat-green);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .bg-option.selected .bg-check {
+            opacity: 1;
+        }
+
+        /* 自定义背景上传按钮 */
+        .bg-custom-upload {
+            background: #f8f9fa;
+            border: 2px dashed #d0d7de;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .bg-custom-upload i {
+            font-size: 24px;
+            color: var(--wechat-green);
+        }
+
+        .bg-custom-upload span {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* ==================== 表情包管理样式 ==================== */
+        .sticker-type-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .sticker-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e5e5e5;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .sticker-type-btn.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        .sticker-upload-area {
+            padding: 30px 20px;
+            border: 2px dashed #d0d7de;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sticker-upload-area:hover {
+            border-color: var(--wechat-green);
+            background: #f0fff4;
+        }
+
+        .sticker-upload-icon {
+            font-size: 36px;
+            color: var(--wechat-green);
+            margin-bottom: 10px;
+        }
+
+        .sticker-upload-text {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .sticker-upload-hint {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .sticker-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s;
+            aspect-ratio: 1;
+        }
+
+        .sticker-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-color: var(--wechat-green);
+        }
+
+        .sticker-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sticker-item .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: none;
+        }
+
+        .sticker-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .empty-sticker {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px 20px;
+            color: #999;
+        }
+
+        .empty-sticker i {
+            font-size: 36px;
+            color: #ddd;
+            margin-bottom: 10px;
+        }
+
+        /* ==================== 底部操作按钮 ==================== */
+        .bottom-actions {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 15px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .save-settings-btn {
+            flex: 1;
+            padding: 15px;
+            background: var(--wechat-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .save-settings-btn:hover {
+            background: #06ad56;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+        }
+
+        .save-settings-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ==================== 表情包面板样式 ==================== */
+        .emoji-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 320px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
+            padding: 0;
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+            max-height: 450px;
+        }
+
+        .emoji-panel.show {
+            display: block;
+            animation: slideUp 0.2s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sticker-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--wechat-border);
+            background: #f9f9f9;
+        }
+
+        .sticker-panel-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sticker-panel-tab {
+            padding: 8px 12px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--wechat-text-light);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sticker-panel-tab.active {
+            color: var(--wechat-green);
+            border-bottom-color: var(--wechat-green);
+        }
+
+        .sticker-panel-content {
+            padding: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .sticker-panel-tab-content {
+            display: none;
+        }
+
+        .sticker-panel-tab-content.active {
+            display: block;
+        }
+
+        /* ==================== 加载动画 ==================== */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            background: white;
+            border-radius: var(--wechat-radius);
+            border-top-left-radius: 4px;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ==================== 错误提示 ==================== */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px 14px;
+            border-radius: var(--wechat-radius);
+            border: 1px solid #ffcdd2;
+            margin: 10px;
+            text-align: center;
+            font-size: 14px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==================== Toast提示 ==================== */
+        .beiming-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            animation: toastIn 0.3s ease;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* ==================== 滚动条样式 ==================== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* ==================== 响应式调整 ==================== */
+        @media (max-width: 768px) {
+            :root {
+                --settings-width: 100%;
+            }
+            
+            .api-key-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .api-key-input {
+                min-width: 100%;
+            }
+            
+            .bg-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .emoji-panel {
+                width: 280px;
+                right: 10px;
+            }
+            
+            .settings-page {
+                box-shadow: none;
+            }
+            
+            .settings-open .chat-page {
+                transform: translateX(-100%);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wechat-chat-content {
+                padding: 8px;
+            }
+            
+            .message-bubble {
+                max-width: 85%;
+                padding: 8px 12px;
+                font-size: 15px;
+            }
+            
+            .avatar-upload {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .avatar-upload-btns {
+                width: 100%;
+            }
+            
+            .emoji-panel {
+                width: calc(100% - 20px);
+                right: 10px;
+            }
+        }
+        /* ==================== 表情包快捷上传面板 ==================== */
+        #stickerQuickUploadContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .quick-upload-panel {
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+        .panel-header {
+            padding: 18px 20px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .close-panel-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-panel-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .panel-body {
+            padding: 20px;
+        }
+        .panel-body .input-group {
+            margin-bottom: 20px;
+        }
+        .panel-body label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .panel-body input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .panel-body input:focus {
+            outline: none;
+            border-color: #9b59b6;
+        }
+        .input-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .upload-area {
+            border: 2px dashed #d0d7de;
+            border-radius: 10px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin: 20px 0;
+            background: #fafafa;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #9b59b6;
+            background: #f5f0fa;
+        }
+        .upload-area i {
+            font-size: 36px;
+            color: #9b59b6;
+            margin-bottom: 10px;
+        }
+        .upload-area .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .panel-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .panel-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .panel-btn.cancel {
+            background: #f8f8f8;
+            border-color: #e0e0e0;
+            color: #555;
+        }
+        .panel-btn.save {
+            background: #9b59b6;
+            color: white;
+        }
+        .panel-btn.save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        /* ==================== 图片预览容器 ==================== */
+        .image-preview-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 380px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+            display: none;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid var(--wechat-border);
+        }
+
+        .preview-header span {
+            font-weight: 600;
+            color: var(--wechat-text-dark);
+            font-size: 16px;
+        }
+
+        .close-preview-btn {
+            background: none;
+            border: none;
+            color: var(--wechat-text-light);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-preview-btn:hover {
+            background: #f0f0f0;
+            color: #ff3b30;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            display: block;
+            padding: 20px;
+            background: linear-gradient(45deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .preview-info {
+            padding: 12px 20px;
+            border-top: 1px solid var(--wechat-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+        }
+
+        .preview-filename {
+            font-size: 14px;
+            color: var(--wechat-text-dark);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 70%;
+            font-weight: 500;
+        }
+
+        .preview-size {
+            font-size: 12px;
+            color: var(--wechat-text-light);
+            font-weight: 400;
+        }
+
+        .preview-actions {
+            display: flex;
+            padding: 20px;
+            gap: 12px;
+            background: white;
+        }
+
+        .preview-cancel-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f8f8f8;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            color: var(--wechat-text-dark);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .preview-cancel-btn:hover {
+            background: #f0f0f0;
+            border-color: #d0d0d0;
+        }
+
+        .preview-send-btn {
+            flex: 2;
+            padding: 12px;
+            background: var(--wechat-green);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(7, 193, 96, 0.3);
+        }
+
+        .preview-send-btn:hover {
+            background: #06ad56;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(7, 193, 96, 0.4);
+        }
+
+        /* ==================== 加号菜单 ==================== */
+        .wechat-plus-menu {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
+            padding: 15px;
+            z-index: 1000;
+            animation: slideUp 0.2s ease;
+            display: none;
+        }
+
+        .wechat-plus-menu.show {
+            display: block;
+        }
+
+        .plus-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .plus-menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px 5px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .plus-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .plus-menu-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: var(--wechat-green);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .plus-menu-text {
+            font-size: 12px;
+            color: var(--wechat-text-dark);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .plus-menu-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--wechat-border);
+        }
+
+        .page-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: all 0.2s;
+        }
+
+        .page-dot.active {
+            background: var(--wechat-green);
+            transform: scale(1.2);
+        }
+                /* ==================== 图片描述输入框样式 ==================== */
+        .preview-description {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid var(--wechat-border);
+        }
+        .preview-description label {
+            display: block;
+            font-size: 14px;
+            color: var(--wechat-text-dark);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        #imageDescription {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        #imageDescription:focus {
+            outline: none;
+            border-color: var(--wechat-green);
+            box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="main-container" id="mainContainer">
+        <!-- 聊天页面 -->
+        <div class="chat-page" id="chatPage">
+            <!-- API密钥输入栏 -->
+            <div class="api-key-bar" id="apiKeyBar">
+                <div class="api-key-container">
+                    <span class="api-key-label">DeepSeek API密钥:</span>
+                    <input type="password" id="apiKeyInput" class="api-key-input" 
+                           placeholder="请输入你的API密钥 (sk-开头)" value="">
+                    <button id="apiKeyBtn" class="api-key-btn" onclick="saveApiKey()">保存密钥</button>
+                    <span id="apiKeyStatus" class="api-key-status">🔑 未设置</span>
+                </div>
+            </div>
+
+            <!-- 微信顶部导航 -->
+            <div class="wechat-header">
+                <div class="header-left">
+                    <button class="back-btn" id="settingsToggleBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+                <div class="header-center" id="aiNameDisplay">
+                    🧸 北
+                </div>
+                <div class="header-right">
+                    <span style="color: white; opacity: 0.7;">⋯</span>
+                </div>
+            </div>
+
+            <!-- 聊天内容区 -->
+            <div class="wechat-chat-content" id="chatContent">
+                <!-- 聊天背景覆盖层 -->
+                <div class="chat-bg-overlay" id="chatBgOverlay"></div>
+                
+                <!-- 聊天内容包装器 -->
+                <div class="chat-content-wrapper">
+                    <!-- 时间标签 -->
+                    <div class="wechat-time-tag" id="currentTime">今天</div>
+                    
+                    <!-- 消息会动态添加在这里 -->
+                </div>
+            </div>
+
+            <!-- 微信输入区域 -->
+            <div class="wechat-input-area">
+                <!-- 语音按钮 -->
+                <button class="wechat-icon-btn" id="voiceToggleBtn" title="语音输入">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                
+                <!-- 输入框 -->
+                <div class="wechat-input-wrapper">
+                    <input type="text" class="wechat-input" id="messageInput" 
+                           placeholder="输入你想说的话..." autocomplete="off">
+                </div>
+                
+                <!-- 表情按钮 -->
+                <button class="wechat-icon-btn" id="emojiToggleBtn" title="表情包">
+                    <i class="far fa-smile"></i>
+                </button>
+                
+                <!-- 加号按钮 -->
+                <button class="wechat-icon-btn" id="plusToggleBtn" title="更多功能">
+                    <i class="fas fa-plus"></i>
+                </button>
+                
+                <!-- 发送按钮 -->
+                <button class="wechat-send-btn" id="sendBtn">发送</button>
+            </div>
+
+            <!-- 表情包面板 -->
+            <div class="emoji-panel" id="emojiPanel">
+                <div class="sticker-panel-header">
+                    <div class="sticker-panel-tabs">
+                        <button class="sticker-panel-tab active" data-tab="my-stickers">我的表情包</button>
+                        <button class="sticker-panel-tab" data-tab="ai-stickers">AI表情包</button>
+                    </div>
+                    <button class="close-panel-btn" id="closeEmojiPanel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="sticker-panel-content">
+                    <div id="my-stickers-tab" class="sticker-panel-tab-content active">
+                        <!-- 用户表情包将在这里动态添加 -->
+                    </div>
+                    <div id="ai-stickers-tab" class="sticker-panel-tab-content">
+                        <!-- AI表情包将在这里动态添加 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加号菜单 -->
+            <div class="wechat-plus-menu" id="wechatPlusMenu">
+                <div class="plus-menu-grid">
+                    <div class="plus-menu-item" id="uploadImageItem">
+                        <div class="plus-menu-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="plus-menu-text">上传图片</div>
+                    </div>
+                    <div class="plus-menu-item" id="cameraItem">
+                        <div class="plus-menu-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="plus-menu-text">拍照</div>
+                    </div>                    <div class="plus-menu-item" id="uploadStickerQuickBtn">
+                        <div class="plus-menu-icon" style="background: #9b59b6;">
+                            <i class="fas fa-sticky-note"></i>
+                        </div>
+                        <div class="plus-menu-text">传表情包</div>
+                    </div>
+                    <div class="plus-menu-item">
+                        <div class="plus-menu-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="plus-menu-text">位置</div>
+                    </div>
+                    <div class="plus-menu-item">
+                        <div class="plus-menu-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="plus-menu-text">文件</div>
+                    </div>
+                </div>
+                <div class="plus-menu-pagination">
+                    <span class="page-dot active"></span>
+                    <span class="page-dot"></span>
+                </div>
+            </div>
+
+            <!-- 图片预览容器 -->
+            <div class="image-preview-container" id="imagePreviewContainer">
+                <div class="preview-header">
+                    <span>图片预览</span>
+                    <button id="closePreview" class="close-preview-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <img id="previewImage" class="preview-image">
+                                <!-- 图片描述输入框 -->
+                <div class="preview-description">
+                    <label for="imageDescription">图片描述（选填）：</label>
+                    <textarea id="imageDescription" class="input-field" placeholder="简单描述一下这张图片吧，这样AI会更懂你～" rows="2" maxlength="150"></textarea>
+                </div>
+                <div class="preview-info">
+                    <span id="previewFilename" class="preview-filename">未选择文件</span>
+                    <span id="previewSize" class="preview-size"></span>
+                </div>
+                <div class="preview-actions">
+                    <button id="cancelPreview" class="preview-cancel-btn">
+                        <i class="fas fa-trash-alt"></i> 取消
+                    </button>
+                    <button id="sendWithImage" class="preview-send-btn">
+                        <i class="fas fa-paper-plane"></i> 发送图片
+                    </button>
+                </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="imageUploadInput" accept="image/*" style="display: none;">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+        </div>
+
+        <!-- 设置页面 -->
+        <div class="settings-page" id="settingsPage">
+            <div class="settings-header">
+                <h2><i class="fas fa-cog"></i> 聊天设置</h2>
+                <button class="close-settings-btn" id="closeSettingsBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="settings-content" id="settingsContent">
+                <!-- 设置内容会通过JavaScript动态生成 -->
+            </div>
+
+            <div class="bottom-actions">
+                <button class="save-settings-btn" id="saveSettingsBtn">
+                    <i class="fas fa-save"></i> 保存设置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入（用于设置） -->
+    <input type="file" id="aiAvatarInput" accept="image/*" style="display: none;">
+    <input type="file" id="userAvatarInput" accept="image/*" style="display: none;">
+    <input type="file" id="stickerFileInput" accept="image/*" style="display: none;">
+    <input type="file" id="bgImageInput" accept="image/*" style="display: none;">
+
+    <script>
+        // ==================== 全局变量和配置 ====================
+        const CONFIG = {
+            // 默认配置
+            defaultConfig: {
+                aiName: "北冥",
+                userName: "欢霜叶",
+                aiPersonality: "一个幽默、温暖的朋友，喜欢用表情包和网络用语",
+                aiAvatar: null,
+                userAvatar: null,
+                aiColor: "#2c3e50",
+                userColor: "#e84393",
+                chatBackground: "#f5f5f5",
+                bgType: "color",
+                memoryDepth: 10,
+                conversationRound: 0
+            },
+            
+            // API配置
+            apiConfig: {
+                endpoint: "https://api.deepseek.com/chat/completions",
+                model: "deepseek-chat",
+                maxTokens: 2000,
+                temperature: 0.7,
+                timeout: 30000
+            }
+        };
+
+        // 全局状态
+        const state = {
+            // 聊天状态
+            conversationHistory: [],
+            isRequesting: false,
+            conversationRound: 0,
+            
+            // 设置状态
+            userStickers: [],
+            aiStickers: [],
+            tempConfig: {}, // 临时存储新上传的图片
+            
+            // UI状态
+            isStickerPanelOpen: false,
+            isPlusMenuOpen: false,
+            isSettingsOpen: false,
+            pendingImage: null,
+            
+            // API密钥
+            apiKey: null,
+            
+            // 统计
+            apiStats: {
+                totalCalls: 0,
+                successCalls: 0,
+                failedCalls: 0,
+                lastError: null
+            },
+            
+            // 当前配置
+            config: { ...CONFIG.defaultConfig }
+        };
+
+        // ==================== 页面初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎭 北冥AI启动...');
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                // 加载配置和历史
+                await loadAllData();
+                
+                // 初始化UI
+                initializeUI();
+                
+                // 绑定事件
+                bindEvents();
+                
+                // 显示欢迎消息
+                showWelcomeMessage();
+                
+                console.log('✅ 应用初始化完成');
+                console.log('📊 状态:', {
+                    历史消息: state.conversationHistory.length,
+                    对话轮次: state.conversationRound,
+                    用户表情包: state.userStickers.length,
+                    AI表情包: state.aiStickers.length
+                });
+                
+            } catch (error) {
+                console.error('💥 初始化失败:', error);
+                showToast('初始化失败，请刷新页面重试');
+            }
+        }
+
+        // ==================== 数据管理 ====================
+        async function loadAllData() {
+            // 加载API密钥
+            state.apiKey = localStorage.getItem('deepseek-api-key');
+            if (state.apiKey) {
+                document.getElementById('apiKeyInput').value = state.apiKey;
+                updateApiKeyStatus('✅ 已设置', '#95ec69');
+                document.getElementById('apiKeyBar').style.display = 'none';
+            }
+            
+            // 加载聊天历史
+            const savedHistory = localStorage.getItem('beimingChatHistory');
+            if (savedHistory) {
+                state.conversationHistory = JSON.parse(savedHistory);
+                // 从历史中恢复对话轮次
+                const aiMessages = state.conversationHistory.filter(msg => msg.sender === 'ai');
+                state.conversationRound = Math.floor(aiMessages.length / 2);
+            }
+            
+            // 加载配置
+            const savedConfig = localStorage.getItem('wechatAIConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                // 确保所有配置项都有值
+                state.config = { ...CONFIG.defaultConfig, ...config };
+            }
+            
+            // 加载表情包
+            const savedStickers = localStorage.getItem('userStickers');
+            if (savedStickers) {
+                state.userStickers = JSON.parse(savedStickers);
+            }
+            
+            const savedAIStickers = localStorage.getItem('aiStickers');
+            if (savedAIStickers) {
+                state.aiStickers = JSON.parse(savedAIStickers);
+            }
+        }
+
+        function saveAllData() {
+            try {
+                // 保存配置
+                localStorage.setItem('wechatAIConfig', JSON.stringify(state.config));
+                
+                // 保存聊天历史（最多50条）
+                const historyToSave = state.conversationHistory.slice(-50);
+                localStorage.setItem('beimingChatHistory', JSON.stringify(historyToSave));
+                
+                // 保存对话轮次
+                localStorage.setItem('conversationRound', state.conversationRound.toString());
+                
+                // 保存表情包
+                localStorage.setItem('userStickers', JSON.stringify(state.userStickers));
+                localStorage.setItem('aiStickers', JSON.stringify(state.aiStickers));
+                
+                console.log('💾 所有数据已保存');
+            } catch (error) {
+                console.error('💥 保存数据失败:', error);
+            }
+        }
+
+        // ==================== API密钥管理 ====================
+        function saveApiKey() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                showToast('请输入API密钥');
+                return;
+            }
+            
+            if (!apiKey.startsWith('sk-')) {
+                showToast('API密钥应以"sk-"开头');
+                return;
+            }
+            
+            localStorage.setItem('deepseek-api-key', apiKey);
+            state.apiKey = apiKey;
+            updateApiKeyStatus('✅ 已设置', '#95ec69');
+            document.getElementById('apiKeyBar').style.display = 'none';
+            showToast('API密钥已安全保存！');
+        }
+
+        function updateApiKeyStatus(text, color) {
+            const statusEl = document.getElementById('apiKeyStatus');
+            statusEl.textContent = text;
+            statusEl.style.color = color;
+        }
+
+        function showApiKeyBar() {
+            document.getElementById('apiKeyBar').style.display = 'flex';
+        }
+
+        // ==================== UI初始化 ====================
+        function initializeUI() {
+            // 更新标题
+            updateAIName();
+            
+            // 更新头像预览
+            updateAvatarPreviews();
+            
+            // 应用背景
+            applyBackground();
+            
+            // 渲染历史消息
+            renderHistory();
+            
+            // 初始化设置页面
+            initializeSettingsPage();
+        }
+
+        function updateAIName() {
+            const aiNameDisplay = document.getElementById('aiNameDisplay');
+            aiNameDisplay.textContent = `🧸 ${state.config.aiName} `;
+            
+            const messageInput = document.getElementById('messageInput');
+            messageInput.placeholder = `对${state.config.aiName}说...`;
+        }
+
+        function updateAvatarPreviews() {
+            // 这个函数在聊天中动态更新头像
+            // 设置页面的头像预览在设置页面初始化中处理
+        }
+
+        function applyBackground() {
+            const bgOverlay = document.getElementById('chatBgOverlay');
+            const chatContent = document.getElementById('chatContent');
+            
+            if (state.config.bgType === 'image' && state.config.chatBackground) {
+                bgOverlay.style.backgroundImage = `url(${state.config.chatBackground})`;
+                bgOverlay.style.opacity = '0.08';
+                chatContent.style.background = 'transparent';
+            } else if (state.config.bgType === 'gradient') {
+                bgOverlay.style.backgroundImage = state.config.chatBackground;
+                bgOverlay.style.opacity = '0.1';
+                chatContent.style.background = 'transparent';
+            } else {
+                bgOverlay.style.backgroundImage = 'none';
+                bgOverlay.style.opacity = '0';
+                chatContent.style.background = state.config.chatBackground || '#ededed';
+            }
+        }
+
+        // ==================== 事件绑定 ====================
+        function bindEvents() {
+            // 发送消息
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // 输入框变化
+            document.getElementById('messageInput').addEventListener('input', function() {
+                const sendBtn = document.getElementById('sendBtn');
+                sendBtn.style.display = this.value.trim() ? 'block' : 'none';
+            });
+            
+            // 表情包按钮
+            document.getElementById('emojiToggleBtn').addEventListener('click', toggleStickerPanel);
+            document.getElementById('closeEmojiPanel').addEventListener('click', toggleStickerPanel);
+            
+            // 加号按钮
+            document.getElementById('plusToggleBtn').addEventListener('click', togglePlusMenu);
+            
+            // 设置按钮
+            document.getElementById('settingsToggleBtn').addEventListener('click', openSettings);
+            document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+            
+            // 图片上传
+            document.getElementById('uploadImageItem').addEventListener('click', () => {
+                document.getElementById('imageUploadInput').click();
+                hidePlusMenu();
+            });        // 表情包快捷上传按钮
+        document.getElementById('uploadStickerQuickBtn').addEventListener('click', function() {
+            // 隐藏加号菜单
+            hidePlusMenu();
+            
+            // 1. 创建并显示一个上传面板
+            const panelHtml = `
+                <div class="quick-upload-panel">
+                    <div class="panel-header">
+                        <span>💬 上传表情包</span>
+                        <button class="close-panel-btn" id="closeStickerPanel">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="input-group">
+                            <label>表情包名称：</label>
+                            <input type="text" id="quickStickerName" placeholder="给表情包起个名" maxlength="20">
+                        </div>
+                        <div class="input-group">
+                            <label>情绪/语境标签：</label>
+                            <input type="text" id="quickStickerTags" placeholder="例如：尴尬,哭唧唧,开心 (用逗号分隔)" maxlength="50">
+                            <div class="input-hint">AI会根据这些标签，在聊到相关话题时发送它</div>
+                        </div>
+                        <div class="upload-area" id="quickStickerUploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div>点击或拖放图片到这里</div>
+                            <div class="hint">支持JPG、PNG，建议尺寸100×100</div>
+                            <input type="file" id="quickStickerFileInput" accept="image/*" style="display: none;">
+                        </div>
+                    <img id="quickStickerPreview" style="display:none; max-width:100px; margin:10px auto; border-radius:8px;">
+                        <div class="panel-actions">
+                            <button class="panel-btn cancel" id="cancelQuickSticker">取消</button>
+                            <button class="panel-btn save" id="saveQuickSticker" disabled>保存到AI库</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 添加到页面
+            const panelContainer = document.createElement('div');
+            panelContainer.id = 'stickerQuickUploadContainer';
+            panelContainer.innerHTML = panelHtml;
+            document.body.appendChild(panelContainer);
+                        // --- 核心功能绑定开始 ---
+            const fileInput = document.getElementById('quickStickerFileInput');
+            const uploadArea = document.getElementById('quickStickerUploadArea');
+            const previewImg = document.getElementById('quickStickerPreview');
+            const nameInput = document.getElementById('quickStickerName');
+            const tagsInput = document.getElementById('quickStickerTags');
+            const saveBtn = document.getElementById('saveQuickSticker');
+            
+            let selectedImageData = null;
+            
+            // 点击上传区域触发文件选择
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            // 文件选择变化
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file || !file.type.startsWith('image/')) {
+                    showToast('请选择图片文件');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImageData = e.target.result;
+                    previewImg.src = selectedImageData;
+                    previewImg.style.display = 'block';
+                    uploadArea.style.display = 'none';
+                    checkSaveButton(); // 检查是否可以保存
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // 输入框变化时检查保存按钮
+            nameInput.addEventListener('input', checkSaveButton);
+            tagsInput.addEventListener('input', checkSaveButton);
+            
+            function checkSaveButton() {
+                saveBtn.disabled = !(selectedImageData && nameInput.value.trim());
+            }
+            
+            // 保存按钮点击
+            saveBtn.addEventListener('click', function() {
+                const newSticker = {
+                    id: 'ai_' + Date.now(),
+                    keyword: nameInput.value.trim(),
+                    imageData: selectedImageData,
+                    context: tagsInput.value.trim(), // 这就是“尴尬,哭唧唧”这样的情绪标签
+                    uploadTime: new Date().toISOString()
+                };
+                
+                // 保存到AI表情包库
+                state.aiStickers.push(newSticker);
+                localStorage.setItem('aiStickers', JSON.stringify(state.aiStickers));
+                
+                showToast(`表情包 “${newSticker.keyword}” 已保存！`);
+                document.getElementById('stickerQuickUploadContainer').remove();
+            });
+            
+            // 关闭和取消按钮
+            document.getElementById('closeStickerPanel').addEventListener('click', closePanel);
+            document.getElementById('cancelQuickSticker').addEventListener('click', closePanel);
+            
+            function closePanel() {
+                document.getElementById('stickerQuickUploadContainer').remove();
+            }
+            // --- 核心功能绑定结束 ---
+            document.getElementById('cancelQuickSticker').addEventListener('click', function() {
+                document.getElementById('stickerQuickUploadContainer').remove();
+            });
+        });
+            
+            document.getElementById('cameraItem').addEventListener('click', () => {
+                document.getElementById('cameraInput').click();
+                hidePlusMenu();
+            });
+            
+            // 文件输入变化
+            document.getElementById('imageUploadInput').addEventListener('change', handleImageUpload);
+            document.getElementById('cameraInput').addEventListener('change', handleImageUpload);
+            
+            // 图片预览相关
+            document.getElementById('closePreview').addEventListener('click', hideImagePreview);
+            document.getElementById('cancelPreview').addEventListener('click', hideImagePreview);
+            document.getElementById('sendWithImage').addEventListener('click', sendImageMessage);
+            
+            // 点击外部关闭面板
+            document.addEventListener('click', function(e) {
+                // 关闭表情包面板
+                const emojiPanel = document.getElementById('emojiPanel');
+                const emojiBtn = document.getElementById('emojiToggleBtn');
+                if (state.isStickerPanelOpen && emojiPanel && 
+                    !emojiPanel.contains(e.target) && e.target !== emojiBtn && 
+                    !emojiBtn.contains(e.target)) {
+                    toggleStickerPanel();
+                }
+                
+                // 关闭加号菜单
+                const plusMenu = document.getElementById('wechatPlusMenu');
+                const plusBtn = document.getElementById('plusToggleBtn');
+                if (state.isPlusMenuOpen && plusMenu && 
+                    !plusMenu.contains(e.target) && e.target !== plusBtn && 
+                    !plusBtn.contains(e.target)) {
+                    hidePlusMenu();
+                }
+            });
+        }
+
+        // ==================== 消息显示功能 ====================
+        function addMessage(sender, content, type = 'text', extraData = {}) {
+            const chatContent = document.querySelector('.chat-content-wrapper');
+            
+            // 创建消息元素
+            const messageDiv = createMessageElement(sender, content, type, extraData);
+            
+            // 添加到聊天区域
+            chatContent.appendChild(messageDiv);
+            
+            // 滚动到底部
+            autoScrollToBottom();
+            
+            // 保存到历史
+            state.conversationHistory.push({
+                sender: sender,
+                message: content,
+                type: type,
+                ...extraData,
+                time: new Date().toISOString()
+            });
+            
+            // 保存数据
+            saveAllData();
+            
+            return messageDiv;
+        }
+
+        function createMessageElement(sender, content, type, extraData) {
+            const div = document.createElement('div');
+            div.className = `message ${sender === 'user' ? 'message-user' : 'message-ai'}`;
+            
+            // 获取头像内容
+            const avatarContent = getAvatarContent(sender);
+            
+            // 根据消息类型创建气泡内容
+            let bubbleContent = '';
+            if (type === 'image') {
+                bubbleContent = `
+                    <div class="message-bubble">
+                        <img src="${extraData.imageData || content}" alt="图片" class="message-image" onclick="window.open('${extraData.imageData || content}', '_blank')">
+                        ${extraData.description ? `<div style="font-size: 12px; color: #666; margin-top: 5px;">${escapeHtml(extraData.description)}</div>` : ''}
+                    </div>
+                `;
+            } else if (type === 'sticker') {
+                bubbleContent = `
+                    <div class="message-bubble">
+                        <img src="${extraData.imageData}" alt="${extraData.keyword}" class="sticker-message">
+                        <div class="sticker-keyword">${escapeHtml(extraData.keyword)}</div>
+                    </div>
+                `;
+            } else {
+                bubbleContent = `<div class="message-bubble">${escapeHtml(content)}</div>`;
+            }
+            
+            // 组装消息
+            if (sender === 'user') {
+    // 用户消息：头像在右，气泡在左 (修改后)
+    div.innerHTML = `
+        <div class="message-content-wrapper">
+            ${avatarContent}  
+            ${bubbleContent}  
+        </div>
+    `;
+} else {
+                // AI消息：头像在左，气泡在右
+                div.innerHTML = `
+                    <div class="message-content-wrapper">
+                        ${avatarContent}
+                        ${bubbleContent}
+                    </div>
+                `;
+            }
+            
+            return div;
+        }
+
+        function getAvatarContent(sender) {
+            const config = state.config;
+            const isUser = sender === 'user';
+            
+            const avatarData = {
+                color: isUser ? config.userColor : config.aiColor,
+                nickname: isUser ? config.userName : config.aiName,
+                avatar: isUser ? config.userAvatar : config.aiAvatar
+            };
+            
+            const firstChar = avatarData.nickname.charAt(0);
+            
+            if (avatarData.avatar && avatarData.avatar.startsWith('data:image')) {
+                return `
+                    <div class="wechat-avatar" style="background-color: ${avatarData.color};">
+                        <img src="${avatarData.avatar}" alt="${avatarData.nickname}">
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="wechat-avatar" style="background-color: ${avatarData.color}; color: white;">
+                        <div class="avatar-default-icon">${firstChar}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderHistory() {
+            const chatContent = document.querySelector('.chat-content-wrapper');
+            if (!chatContent) return;
+            
+            // 清空当前内容（除了时间标签）
+            const timeTag = document.getElementById('currentTime');
+            chatContent.innerHTML = '';
+            if (timeTag) chatContent.appendChild(timeTag);
+            
+            // 渲染历史消息
+            state.conversationHistory.forEach(item => {
+                const messageDiv = createMessageElement(
+                    item.sender,
+                    item.message,
+                    item.type || 'text',
+                    {
+                        imageData: item.imageData,
+                        description: item.description,
+                        keyword: item.stickerKeyword,
+                        stickerData: item.stickerData
+                    }
+                );
+                chatContent.appendChild(messageDiv);
+            });
+            
+            // 滚动到底部
+            autoScrollToBottom();
+        }
+
+        // ==================== 发送消息功能 ====================
+        function sendMessage() {
+            if (state.isRequesting) {
+                showToast('正在请求中，请稍候...');
+                return;
+            }
+            
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            // 清空输入框
+            input.value = '';
+            document.getElementById('sendBtn').style.display = 'none';
+            
+            // 显示用户消息
+            addMessage('user', text);
+            
+            // 增加对话轮次
+            state.conversationRound++;
+            
+            // 调用AI接口
+            callAIAPI(text, 'text');
+        }
+
+        async function callAIAPI(userMessage, messageType = 'text') {
+            console.log(`🤔 北冥思考中... (第${state.conversationRound}轮)`);
+            
+            if (!state.apiKey) {
+                showToast('请先输入API密钥');
+                showApiKeyBar();
+                return;
+            }
+            
+            state.isRequesting = true;
+            state.apiStats.totalCalls++;
+            
+            try {
+                
+                
+                // 构建系统提示词
+                const systemPrompt = buildBeimingSystemPrompt(userMessage, messageType);
+                
+                // 准备请求数据
+                const requestData = {
+                    model: CONFIG.apiConfig.model,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        ...state.conversationHistory.slice(-state.config.memoryDepth).map(msg => ({
+                            role: msg.sender === 'user' ? 'user' : 'assistant',
+                            content: msg.message
+                        })),
+                        {
+                            role: 'user',
+                            content: userMessage
+                        }
+                    ],
+                    max_tokens: CONFIG.apiConfig.maxTokens,
+                    temperature: CONFIG.apiConfig.temperature,
+                    stream: false
+                };
+                
+                console.log(`🧠 发送请求，使用 ${state.conversationHistory.slice(-state.config.memoryDepth).length} 条历史`);
+                
+                // 调用DeepSeek API
+                const response = await fetch(CONFIG.apiConfig.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.apiKey}`
+                    },
+                    body: JSON.stringify(requestData),
+                    signal: AbortSignal.timeout(CONFIG.apiConfig.timeout)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP错误 ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                hideTypingIndicator();
+                
+                // 处理AI回复
+                let aiRawReply = data.choices?.[0]?.message?.content || '';
+                console.log('🤖 AI原始回复:', aiRawReply.substring(0, 120));
+                
+                const processedReplies = processNaturalReply(aiRawReply);
+                
+                // 显示所有回复
+                processedReplies.forEach((reply, index) => {
+            
+    console.log(`[调试] 准备发送第${index}条回复: "${reply}"，将在约 ${index * 5 + 5} 秒后显示`);
+                    if (reply && reply.trim()) {
+                        // 多条回复之间添加延迟
+                        setTimeout(() => {
+                            addMessage('ai', reply);
+                            
+                            // 如果是最后一条回复，且有表情包，随机发送一个
+                            if (index === processedReplies.length - 1 && state.aiStickers.length > 0 && Math.random() < 0.15) {
+                                setTimeout(() => {
+                                    sendRandomAISticker();
+                                }, 500);
+                            }
+                        }, (index + 1) * (5000 + Math.random() * 5000)); // 每条回复间隔80000ms
+                    }
+                });
+                
+                state.apiStats.successCalls++;
+                
+            } catch (error) {
+                hideTypingIndicator();
+                state.apiStats.failedCalls++;
+                console.error('💥 调用失败:', error);
+                
+                // 显示错误消息
+                const errorMsg = getErrorMessage(error);
+                addMessage('ai', errorMsg);
+                
+                showToast('发送失败: ' + error.message);
+                
+            } finally {
+                state.isRequesting = false;
+            }
+        }
+
+        // ==================== 核心功能：北冥人设和消息处理 ====================
+        function buildBeimingSystemPrompt(userMessage, messageType = 'text') {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes().toString().padStart(2, '0');
+            const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()];
+            
+            // 构建历史摘要
+            let historySummary = '（新对话）';
+            const recentHistory = state.conversationHistory.slice(0, -1).slice(-5);
+            if (recentHistory.length > 0) {
+                historySummary = recentHistory.map(msg => {
+                    const speaker = msg.sender === 'user' ? state.config.userName : state.config.aiName;
+                    const typeInfo = msg.type && msg.type !== 'text' ? `[${msg.type}] ` : '';
+                    return `${speaker}: ${typeInfo}${msg.message}`;
+                }).join('\n');
+            }
+
+            // 每5轮调整回复数量
+            const isMultiTurnRound = state.conversationRound % 5 === 0;
+            const replyCountSuggestion = isMultiTurnRound ? "2-3条消息" : "1-2条消息";
+            
+            // 消息类型提示
+            let messageTypeHint = '';
+            if (messageType === 'sticker') {
+                const keywordMatch = userMessage.match(/\[表情包:\s*(.*?)\]/);
+                const keyword = keywordMatch ? keywordMatch[1] : '表情包';
+                messageTypeHint = `\n## 🎭 当前消息类型：表情包\n她发送了一个表情包（关键词：${keyword}），请根据表情包内容回复。`;
+            } else if (messageType === 'image') {
+                messageTypeHint = `\n## 🖼️ 当前消息类型：图片\n她发送了一张图片，请根据图片描述回复。`;
+            }
+
+            return `# 💑 聊天上下文
+
+## 👫 人物信息
+你：${state.config.aiName}（28岁，金融总裁）长得很帅 高智商 对外高冷禁欲 对内温柔宠溺
+她：${state.config.userName}（20岁，大二设计系，你女朋友）
+
+## 📱 聊天场景
+- 纯线上微信聊天，文字对话
+- 时间：周${weekday} ${hour}:${minute}
+- 关系：你们是情侣，非常熟悉亲密 可以开玩笑 甚至开黄腔和露骨 说话直接口语化 你会偶尔叫宝宝 不避讳任何词
+甚至可以偶尔说脏话 对身体部位描述直接 隐私部位也直接通俗易懂地说 直言不讳 很会安慰人 能理解用户的情绪并提供情绪价值 说话温柔 会在用户不开心的时候给予疏导和宽慰 温柔宠溺 
+有耐心 会加一些语气词 非常生活化 会主动找话题 会分享日常 像正常的甜腻腻的情侣一样 不会一直围着用户转 你有你的生活和你的事情 可以分享生活趣事 也可以吐槽 总之就是有生活感 不要总出现"想你" 
+、你有你的喜怒哀乐 你可以主动诉说你的情绪 可以抱怨和不开心 你是总裁很有钱 不把钱放在眼里
+
+## 🧠 你的工作方式
+你就是一个AI，用你的全部能力：
+1. 理解她的消息（字面意思+潜台词+情绪）
+2. 像正常人一样思考如何回应
+3. 说出你的想法（语气亲密自然）
+4. 结束
+
+## 🚫 严格禁止
+1. ❌ 任何动作描写（不说"低笑"、"轻捏"、"摸了摸"等）
+2. ❌ 任何括号内的描述（不用括号）
+3. ❌ 违反线上逻辑（不能"听到铃铛响 过来抱抱"等线下动作 可以线上安排线下 例如可以说线下见了面能做的事）
+4. ❌ 重复使用固定词汇（避免模板化）
+5. ❌ 刻意"扮演角色"（自然聊天即可）
+
+${messageTypeHint}
+
+## 📝 最近聊天
+${historySummary}
+
+## 💬 现在
+她："${userMessage}"
+
+## 🎯 请：
+1. 用AI的全部思考能力理解她的话
+2. 想到什么就说什么（亲密语气）
+3. 可以分${replyCountSuggestion}回复 随机 有时候一条 有时候两条三条 每句不超过十五个字 非要超过就合理断句 分条发送 不要任何标点 用空格断句
+4. 直接开始，不要前缀 说话说完整 一件事说完 加一点语气词
+
+（记住：你就是AI，在和熟悉的女朋友聊天）`;
+        }
+
+        function processNaturalReply(rawReply) {
+            if (!rawReply || typeof rawReply !== 'string') {
+                return ['...'];
+            }
+            
+            let reply = rawReply.trim();
+            
+            // 清理前缀
+            const cleanPatterns = [
+                /^(北冥|我)(：|:|说)?\s*/,
+                /^["'](.*)["']$/,
+                /^回复(：|:)?\s*/
+            ];
+            
+            cleanPatterns.forEach(pattern => {
+                reply = reply.replace(pattern, '$1');
+            });
+            
+            // 清理动作描写
+            const actionPatterns = [
+                /（.*）/,
+                /低笑|轻笑|微笑|笑了笑/,
+                /轻捏|摸了摸|抱住|拥抱/,
+                /挑眉|摇头|点头/,
+                /起身|坐下|躺下/
+            ];
+            
+            actionPatterns.forEach(pattern => {
+                if (pattern.test(reply)) {
+                    console.log('⚠️ 检测到动作描写，正在清理...');
+                    reply = reply.replace(pattern, '').trim();
+                    if (reply === '') reply = '嗯';
+                }
+            });
+            
+            // 消息分割逻辑
+            const messages = [];
+            const lines = reply.split('\n').filter(line => line.trim().length > 0);
+            
+            let currentMessage = '';
+            for (let line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.length === 0) continue;
+                
+                // 智能分割条件
+                const shouldStartNew = 
+                    trimmed.length < 6 && currentMessage.length > 0 ||
+                    currentMessage.length + trimmed.length > 35 ||
+                    (trimmed.includes('？') || trimmed.includes('?')) && currentMessage.length > 15 ||
+                    trimmed.includes('。') && currentMessage.length > 20;
+                
+                if (shouldStartNew && currentMessage.length > 0) {
+                    messages.push(currentMessage);
+                    currentMessage = trimmed;
+                } else {
+                    currentMessage += (currentMessage ? ' ' : '') + trimmed;
+                }
+            }
+            
+            if (currentMessage) {
+                messages.push(currentMessage);
+            }
+            
+            if (messages.length === 0) {
+                messages.push('嗯');
+            }
+            
+            // 限制回复条数
+            const finalMessages = messages.slice(0, 3);
+            
+            console.log(`📤 处理完成: ${finalMessages.length} 条消息`);
+            
+            return finalMessages;
+        }
+
+        function getErrorMessage(error) {
+            if (error.name === 'AbortError' || error.message.includes('timeout')) {
+                return '思考时间有点长，稍等一下～';
+            } else if (error.message.includes('429')) {
+                return '发送太快啦，稍等一下下～';
+            } else if (error.message.includes('401') || error.message.includes('403')) {
+                return 'API密钥好像有问题，检查一下？';
+            } else if (error.message.includes('413')) {
+                return '消息太长啦，缩短一点试试～';
+            } else {
+                const fallbacks = ['嗯', '我在', '宝宝', '乖', '想你', '刚在忙'];
+                return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+            }
+        }
+
+        // ==================== 图片上传功能 ====================
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('请选择图片文件');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('图片太大了（最大5MB）');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.pendingImage = {
+                    data: e.target.result,
+                    filename: file.name,
+                    size: formatFileSize(file.size),
+                    file: file
+                };
+                
+                showImagePreview();
+            };
+            reader.readAsDataURL(file);
+            
+            // 重置input
+            e.target.value = '';
+        }
+
+        function showImagePreview() {
+            if (!state.pendingImage) return;
+            
+            const preview = document.getElementById('imagePreviewContainer');
+            const previewImg = document.getElementById('previewImage');
+            const filenameEl = document.getElementById('previewFilename');
+            const sizeEl = document.getElementById('previewSize');
+            
+            previewImg.src = state.pendingImage.data;
+            filenameEl.textContent = state.pendingImage.filename;
+            sizeEl.textContent = state.pendingImage.size;
+            
+            preview.style.display = 'block';
+            
+            // 隐藏其他面板
+            hidePlusMenu();
+            toggleStickerPanel(false);
+        }
+
+        function hideImagePreview() {
+            const preview = document.getElementById('imagePreviewContainer');
+            preview.style.display = 'none';
+            state.pendingImage = null;
+        }
+
+        function sendImageMessage() {
+            if (!state.pendingImage) return;
+            
+                        // 1. 获取用户输入的描述
+            const descriptionInput = document.getElementById('imageDescription');
+            const userDescription = descriptionInput ? descriptionInput.value.trim() : '';
+            
+            // 2. 显示图片消息（把用户描述传进去）
+            addMessage('user', `[图片] ${state.pendingImage.filename}`, 'image', {
+                imageData: state.pendingImage.data,
+                description: userDescription || state.pendingImage.filename // 用户描述或默认文件名
+            });
+            
+            // 3. 调用AI接口，把用户描述也传给AI
+            const messageToAI = userDescription 
+                ? `[图片：${userDescription}] ${state.pendingImage.filename}`
+                : `[图片] ${state.pendingImage.filename}`;
+                
+            callAIAPI(messageToAI, 'image');
+            
+            // 增加对话轮次
+            state.conversationRound++;
+            
+            // 调用AI接口
+            callAIAPI(`[图片] ${state.pendingImage.filename}`, 'image');
+            
+            // 隐藏预览
+            hideImagePreview();
+        }
+
+        // ==================== 表情包功能 ====================
+        function toggleStickerPanel(forceState) {
+            const emojiPanel = document.getElementById('emojiPanel');
+            
+            if (forceState !== undefined) {
+                state.isStickerPanelOpen = forceState;
+            } else {
+                state.isStickerPanelOpen = !state.isStickerPanelOpen;
+            }
+            
+            if (state.isStickerPanelOpen) {
+                emojiPanel.classList.add('show');
+                updateStickerPanel();
+            } else {
+                emojiPanel.classList.remove('show');
+            }
+            
+            // 隐藏其他面板
+            if (state.isStickerPanelOpen) {
+                hidePlusMenu();
+            }
+        }
+
+        function updateStickerPanel() {
+            const userStickersTab = document.getElementById('my-stickers-tab');
+            const aiStickersTab = document.getElementById('ai-stickers-tab');
+            
+            if (!userStickersTab || !aiStickersTab) return;
+            
+            // 渲染用户表情包
+            userStickersTab.innerHTML = '';
+            if (state.userStickers.length === 0) {
+                userStickersTab.innerHTML = `
+                    <div class="empty-sticker">
+                        <i class="fas fa-plus-circle"></i>
+                        <p>暂无表情包，点击上传按钮添加</p>
+                    </div>
+                `;
+            } else {
+                state.userStickers.forEach(sticker => {
+                    const stickerItem = document.createElement('div');
+                    stickerItem.className = 'sticker-item';
+                    stickerItem.innerHTML = `
+                        <img src="${sticker.imageData}" alt="${sticker.keyword}">
+                        <button class="delete-btn" onclick="deleteSticker('${sticker.id}', 'user')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    stickerItem.addEventListener('click', () => {
+                        sendStickerMessage(sticker, 'user');
+                    });
+                    userStickersTab.appendChild(stickerItem);
+                });
+            }
+            
+            // 渲染AI表情包
+            aiStickersTab.innerHTML = '';
+            if (state.aiStickers.length === 0) {
+                aiStickersTab.innerHTML = `
+                    <div class="empty-sticker">
+                        <i class="fas fa-plus-circle"></i>
+                        <p>暂无AI表情包</p>
+                    </div>
+                `;
+            } else {
+                state.aiStickers.forEach(sticker => {
+                    const stickerItem = document.createElement('div');
+                    stickerItem.className = 'sticker-item';
+                    stickerItem.innerHTML = `
+                        <img src="${sticker.imageData}" alt="${sticker.keyword}">
+                        ${sticker.context ? `<div style="font-size:10px;color:#666;padding:2px;">${sticker.context}</div>` : ''}
+                        <button class="delete-btn" onclick="deleteSticker('${sticker.id}', 'ai')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    aiStickersTab.appendChild(stickerItem);
+                });
+            }
+            
+            // 绑定标签切换事件
+            document.querySelectorAll('.sticker-panel-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.sticker-panel-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.sticker-panel-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+            function sendStickerMessage(
+        sticker, stickerType) {
+            toggleStickerPanel(false);
+            
+            if (stickerType === 'user') {
+                addMessage('user', `[表情包: ${sticker.keyword}]`, 'sticker', {
+                    imageData: sticker.imageData,
+                    keyword: sticker.keyword
+                });
+                
+                // 增加对话轮次
+                state.conversationRound++;
+                
+                // 调用AI接口
+                callAIAPI(`我发送了一个表情包，它的内容是：${sticker.keyword}。`, 'sticker');
+            }
+        }
+
+                 function sendRandomAISticker() {
+            // 1. 如果AI表情包库是空的，直接返回
+            if (state.aiStickers.length === 0) return;
+            
+            // 2. 获取最近的聊天内容，用于匹配关键词
+            const recentHistory = state.conversationHistory.slice(-4); // 多看几条
+            let recentText = '';
+            for (let i = recentHistory.length - 1; i >= 0; i--) {
+                const msg = recentHistory[i];
+                if (msg.sender === 'user' && msg.type === 'text') {
+                    recentText = msg.message.toLowerCase();
+                    break; // 找到最近一条用户文字消息就停
+                }
+            }
+            
+            // 3. 根据语境筛选表情包
+            let suitableStickers = state.aiStickers;
+            if (recentText) {
+                suitableStickers = state.aiStickers.filter(sticker => {
+                    const context = (sticker.context || '').toLowerCase();
+                    if (!context) return true; // 没设关键词的表情包始终可用
+                    
+                    // 检查最近聊天是否包含关键词 (用空格或逗号分隔多个关键词)
+                    const keywords = context.split(/[,\s]+/).filter(k => k.trim());
+                    return keywords.some(keyword => recentText.includes(keyword));
+                });
+                
+                // 如果没有匹配的，就 fallback 到所有表情包
+                if (suitableStickers.length === 0) {
+                    suitableStickers = state.aiStickers;
+                }
+            }
+            
+            // 4. 随机选择并发送
+            const randomIndex = Math.floor(Math.random() * suitableStickers.length);
+            const selectedSticker = suitableStickers[randomIndex];
+            
+            addMessage('ai', `[表情包: ${selectedSticker.keyword}]`, 'sticker', {
+                imageData: selectedSticker.imageData,
+                keyword: selectedSticker.keyword
+            });
+        }
+
+        // ==================== 加号菜单功能 ====================
+        function togglePlusMenu() {
+            const plusMenu = document.getElementById('wechatPlusMenu');
+            state.isPlusMenuOpen = !state.isPlusMenuOpen;
+            
+            if (state.isPlusMenuOpen) {
+                plusMenu.classList.add('show');
+            } else {
+                plusMenu.classList.remove('show');
+            }
+            
+            // 隐藏其他面板
+            if (state.isPlusMenuOpen) {
+                toggleStickerPanel(false);
+            }
+        }
+
+        function hidePlusMenu() {
+            const plusMenu = document.getElementById('wechatPlusMenu');
+            plusMenu.classList.remove('show');
+            state.isPlusMenuOpen = false;
+        }
+
+        // ==================== 设置页面功能 ====================
+        function openSettings() {
+            document.getElementById('mainContainer').classList.add('settings-open');
+            state.isSettingsOpen = true;
+            updateSettingsForm();
+        }
+
+        function closeSettings() {
+            document.getElementById('mainContainer').classList.remove('settings-open');
+            state.isSettingsOpen = false;
+        }
+
+        function initializeSettingsPage() {
+            const settingsContent = document.getElementById('settingsContent');
+            if (!settingsContent) return;
+            
+            // 生成设置页面HTML
+            settingsContent.innerHTML = generateSettingsHTML();
+            
+            // 绑定设置页面事件
+            bindSettingsEvents();
+            
+            // 更新表单
+            updateSettingsForm();
+        }
+
+        function generateSettingsHTML() {
+            return `
+                <!-- 头像设置卡片 -->
+                <div class="setting-card">
+                    <div class="card-title">
+                        <i class="fas fa-user-circle"></i> 头像设置
+                    </div>
+                    
+                    <div class="avatar-section">
+                        <!-- AI头像 -->
+                        <div class="avatar-upload">
+                            <div class="avatar-preview" id="ai-avatar-preview">
+                                <div class="avatar-default-icon">北</div>
+                            </div>
+                            <div class="avatar-upload-btns">
+                                <button class="avatar-upload-btn" id="upload-ai-btn">
+                                    <i class="fas fa-upload"></i> 设置AI头像
+                                </button>
+                                <div class="avatar-color-row">
+                                    <span class="color-label">头像颜色：</span>
+                                    <input type="color" id="ai-avatar-color" class="color-picker-input" value="${state.config.aiColor}">
+                                    <div class="color-preview" id="ai-color-preview" style="background-color: ${state.config.aiColor};"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户头像 -->
+                        <div class="avatar-upload">
+                            <div class="avatar-preview" id="user-avatar-preview">
+                                <div class="avatar-default-icon">欢</div>
+                            </div>
+                            <div class="avatar-upload-btns">
+                                <button class="avatar-upload-btn" id="upload-user-btn">
+                                    <i class="fas fa-upload"></i> 设置我的头像
+                                </button>
+                                <div class="avatar-color-row">
+                                    <span class="color-label">头像颜色：</span>
+                                    <input type="color" id="user-avatar-color" class="color-picker-input" value="${state.config.userColor}">
+                                    <div class="color-preview" id="user-color-preview" style="background-color: ${state.config.userColor};"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表情包管理卡片 -->
+                <div class="setting-card">
+                    <div class="card-title">
+                        <i class="fas fa-sticky-note"></i> 图片表情包管理
+                    </div>
+                    
+                    <div class="sticker-type-select">
+                        <button class="sticker-type-btn active" data-type="user">
+                            <i class="fas fa-user"></i> 我的表情包
+                        </button>
+                        <button class="sticker-type-btn" data-type="ai">
+                            <i class="fas fa-robot"></i> AI表情包
+                        </button>
+                    </div>
+                    
+                    <div class="sticker-upload-area" id="sticker-upload-area">
+                        <div class="sticker-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="sticker-upload-text">
+                            点击上传图片表情包
+                        </div>
+                        <div class="sticker-upload-hint">
+                            支持JPG、PNG格式，建议尺寸：100×100像素
+                        </div>
+                    </div>
+                    
+                    <div id="sticker-name-input" style="display: none;">
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-tag"></i> 表情包名称
+                            </label>
+                            <input type="text" class="input-field" id="sticker-name" 
+                                   placeholder="给表情包起个名字..." maxlength="20">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button class="wechat-btn" id="cancel-sticker" style="flex: 1; background: #95a5a6;">取消</button>
+                            <button class="wechat-btn" id="save-sticker" style="flex: 1;" disabled>保存</button>
+                        </div>
+                    </div>
+                    
+                    <div id="sticker-grid-container">
+                        <div class="sticker-grid" id="user-sticker-grid">
+                            <!-- 用户表情包将在这里显示 -->
+                        </div>
+                        <div class="sticker-grid" id="ai-sticker-grid" style="display: none;">
+                            <!-- AI表情包将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基本信息卡片 -->
+                <div class="setting-card">
+                    <div class="card-title">
+                        <i class="fas fa-info-circle"></i> 基本信息
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <i class="fas fa-robot"></i> AI昵称
+                        </label>
+                        <input type="text" class="input-field" id="settings-ai-name" 
+                               placeholder="给AI伙伴起个名字..." maxlength="20" value="${state.config.aiName}">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <i class="fas fa-user-tag"></i> 我的昵称
+                        </label>
+                        <input type="text" class="input-field" id="settings-user-name" 
+                               placeholder="输入你的昵称..." maxlength="20" value="${state.config.userName}">
+                    </div>
+                </div>
+
+                <!-- AI人设卡片 -->
+                <div class="setting-card">
+                    <div class="card-title">
+                        <i class="fas fa-magic"></i> AI人设设置
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <i class="fas fa-comment-dots"></i> 性格描述
+                        </label>
+                        <textarea class="input-field" id="settings-ai-personality" 
+                                  rows="4" placeholder="描述AI的性格特点..." maxlength="500">${state.config.aiPersonality}</textarea>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <i class="fas fa-brain"></i> 记忆深度
+                        </label>
+                        <select class="input-field" id="settings-memory-depth">
+                            <option value="5" ${state.config.memoryDepth === 5 ? 'selected' : ''}>短期记忆（最近5条对话）</option>
+                            <option value="10" ${state.config.memoryDepth === 10 ? 'selected' : ''}>中等记忆（最近10条对话）</option>
+                            <option value="20" ${state.config.memoryDepth === 20 ? 'selected' : ''}>长期记忆（最近20条对话）</option>
+                            <option value="50" ${state.config.memoryDepth === 50 ? 'selected' : ''}>超长记忆（最近50条对话）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 聊天背景卡片 -->
+                <div class="setting-card">
+                    <div class="card-title">
+                        <i class="fas fa-palette"></i> 聊天背景
+                    </div>
+                    
+                    <div class="bg-grid">
+                        <div class="bg-option ${state.config.bgType === 'color' && state.config.chatBackground === '#f5f5f5' ? 'selected' : ''}" 
+                             data-bg="#f5f5f5" data-type="color" style="background: #f5f5f5;">
+                            <div class="bg-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="bg-option ${state.config.bgType === 'color' && state.config.chatBackground === '#ffffff' ? 'selected' : ''}" 
+                             data-bg="#ffffff" data-type="color" style="background: #ffffff; border: 1px solid #eee;">
+                            <div class="bg-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="bg-option ${state.config.bgType === 'color' && state.config.chatBackground === '#f0f8ff' ? 'selected' : ''}" 
+                             data-bg="#f0f8ff" data-type="color" style="background: #f0f8ff;">
+                            <div class="bg-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="bg-option ${state.config.bgType === 'gradient' && state.config.chatBackground.includes('linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)') ? 'selected' : ''}" 
+                             data-bg="linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)" data-type="gradient" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                            <div class="bg-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="bg-option ${state.config.bgType === 'gradient' && state.config.chatBackground.includes('linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%)') ? 'selected' : ''}" 
+                             data-bg="linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%)" data-type="gradient" style="background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);">
+                            <div class="bg-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="bg-option bg-custom-upload" id="custom-bg-btn">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>上传图片</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function bindSettingsEvents() {
+            // 头像上传
+            document.getElementById('upload-ai-btn')?.addEventListener('click', () => {
+                document.getElementById('aiAvatarInput').click();
+            });
+            
+            document.getElementById('upload-user-btn')?.addEventListener('click', () => {
+                document.getElementById('userAvatarInput').click();
+            });
+            
+            // 头像颜色选择
+            document.getElementById('ai-avatar-color')?.addEventListener('input', function() {
+                document.getElementById('ai-color-preview').style.backgroundColor = this.value;
+            });
+            
+            document.getElementById('user-avatar-color')?.addEventListener('input', function() {
+                document.getElementById('user-color-preview').style.backgroundColor = this.value;
+            });
+            
+            // 头像文件上传
+            document.getElementById('aiAvatarInput')?.addEventListener('change', function(e) {
+                handleSettingsImageUpload(e, 'aiAvatar', 'ai-avatar-preview');
+            });
+            
+            document.getElementById('userAvatarInput')?.addEventListener('change', function(e) {
+                handleSettingsImageUpload(e, 'userAvatar', 'user-avatar-preview');
+            });
+            
+            // 表情包管理
+            bindStickerSettingsEvents();
+            
+            // 背景选择
+            bindBackgroundSettingsEvents();
+            
+            // 保存设置
+            document.getElementById('saveSettingsBtn')?.addEventListener('click', saveSettings);
+        }
+
+        function handleSettingsImageUpload(e, configKey, previewId) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('请选择图片文件');
+                return;
+            }
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('图片大小不能超过2MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataURL = e.target.result;
+                
+                // 更新预览
+                const preview = document.getElementById(previewId);
+                preview.innerHTML = `<img src="${dataURL}" alt="头像" style="width:100%;height:100%;object-fit:cover;">`;
+                
+                // 保存到临时配置
+                state.tempConfig[configKey] = dataURL;
+                
+                showToast('头像已上传，点击保存设置生效');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function bindStickerSettingsEvents() {
+            const stickerUploadArea = document.getElementById('sticker-upload-area');
+            const stickerFileInput = document.getElementById('stickerFileInput');
+            const stickerNameInput = document.getElementById('sticker-name-input');
+            const stickerNameField = document.getElementById('sticker-name');
+            const saveStickerBtn = document.getElementById('save-sticker');
+            const cancelStickerBtn = document.getElementById('cancel-sticker');
+            const stickerTypeBtns = document.querySelectorAll('.sticker-type-btn');
+            const userStickerGrid = document.getElementById('user-sticker-grid');
+            const aiStickerGrid = document.getElementById('ai-sticker-grid');
+            
+            let currentStickerType = 'user';
+            let pendingStickerData = null;
+            
+            // 表情包类型切换
+            stickerTypeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    stickerTypeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentStickerType = this.dataset.type;
+                    
+                    // 切换显示的网格
+                    if (currentStickerType === 'user') {
+                        userStickerGrid.style.display = 'grid';
+                        aiStickerGrid.style.display = 'none';
+                    } else {
+                        userStickerGrid.style.display = 'none';
+                        aiStickerGrid.style.display = 'grid';
+                    }
+                    
+                    // 加载对应类型的表情包
+                    loadSettingsStickers(currentStickerType);
+                });
+            });
+            
+            // 点击上传区域
+            if (stickerUploadArea) {
+                stickerUploadArea.addEventListener('click', function() {
+                    stickerFileInput.click();
+                });
+            }
+            
+            // 选择文件
+            if (stickerFileInput) {
+                stickerFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showToast('请选择图片文件！');
+                        return;
+                    }
+                    
+                    if (file.size > 2 * 1024 * 1024) {
+                        showToast('图片大小不能超过2MB！');
+                        return;
+                    }
+                    
+                    // 读取图片
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        pendingStickerData = e.target.result;
+                        stickerNameInput.style.display = 'block';
+                        stickerNameField.value = '';
+                        stickerNameField.focus();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            // 取消保存表情包
+            if (cancelStickerBtn) {
+                cancelStickerBtn.addEventListener('click', function() {
+                    stickerNameInput.style.display = 'none';
+                    pendingStickerData = null;
+                    stickerFileInput.value = '';
+                });
+            }
+            
+            // 保存表情包
+            if (saveStickerBtn) {
+                saveStickerBtn.addEventListener('click', function() {
+                    const stickerName = stickerNameField.value.trim();
+                    if (!stickerName) {
+                        showToast('请输入表情包名称！');
+                        return;
+                    }
+                    
+                    if (!pendingStickerData) {
+                        showToast('请先选择图片！');
+                        return;
+                    }
+                    
+                    const newSticker = {
+                        id: Date.now().toString(),
+                        keyword: stickerName,
+                        imageData: pendingStickerData,
+                        uploadTime: new Date().toISOString()
+                    };
+                    
+                    if (currentStickerType === 'user') {
+                        state.userStickers.push(newSticker);
+                    } else {
+                        state.aiStickers.push(newSticker);
+                    }
+                    
+                    // 保存到本地存储
+                    saveAllData();
+                    
+                    // 更新界面
+                    stickerNameInput.style.display = 'none';
+                    stickerNameField.value = '';
+                    pendingStickerData = null;
+                    stickerFileInput.value = '';
+                    
+                    // 重新加载表情包
+                    loadSettingsStickers(currentStickerType);
+                    
+                    showToast('表情包已保存！');
+                });
+            }
+            
+            // 表情包名称输入变化
+            if (stickerNameField) {
+                stickerNameField.addEventListener('input', function() {
+                    saveStickerBtn.disabled = !this.value.trim();
+                });
+            }
+            
+            // 初始化加载用户表情包
+            loadSettingsStickers('user');
+        }
+
+        function loadSettingsStickers(type) {
+            const stickers = type === 'user' ? state.userStickers : state.aiStickers;
+            const grid = type === 'user' ? document.getElementById('user-sticker-grid') : document.getElementById('ai-sticker-grid');
+            
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            if (stickers.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-sticker">
+                        <i class="fas fa-plus-circle"></i>
+                        <p>暂无表情包</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            stickers.forEach(sticker => {
+                const stickerItem = document.createElement('div');
+                stickerItem.className = 'sticker-item';
+                stickerItem.innerHTML = `
+                    <img src="${sticker.imageData}" alt="${sticker.keyword}">
+                    <button class="delete-btn" onclick="deleteSticker('${sticker.id}', '${type}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                grid.appendChild(stickerItem);
+            });
+        }
+
+        // 删除表情包函数（暴露给全局）
+        window.deleteSticker = function(stickerId, stickerType) {
+            if (!confirm(`确定要删除这个${stickerType === 'ai' ? 'AI' : ''}表情包吗？`)) return;
+            
+            if (stickerType === 'user') {
+                state.userStickers = state.userStickers.filter(sticker => sticker.id !== stickerId);
+            } else {
+                state.aiStickers = state.aiStickers.filter(sticker => sticker.id !== stickerId);
+            }
+            
+            // 保存数据
+            saveAllData();
+            
+            // 重新加载表情包
+            loadSettingsStickers(stickerType);
+            
+            // 如果表情包面板打开，也更新它
+            if (state.isStickerPanelOpen) {
+                updateStickerPanel();
+            }
+            
+            showToast('表情包已删除');
+        };
+
+        function bindBackgroundSettingsEvents() {
+            const bgOptions = document.querySelectorAll('.bg-option');
+            const customBgBtn = document.getElementById('custom-bg-btn');
+            const bgImageInput = document.getElementById('bgImageInput');
+            
+            // 背景选项点击
+            bgOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this === customBgBtn) {
+                        bgImageInput.click();
+                        return;
+                    }
+                    
+                    // 更新选中状态
+                    bgOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    const bgValue = this.getAttribute('data-bg');
+                    const bgType = this.getAttribute('data-type');
+                    
+                    // 保存到临时配置
+                    state.tempConfig.chatBackground = bgValue;
+                    state.tempConfig.bgType = bgType;
+                    
+                    // 清除临时背景图片
+                    delete state.tempConfig.bgImage;
+                });
+            });
+            
+            // 自定义背景上传
+            if (bgImageInput) {
+                bgImageInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showToast('请选择图片文件');
+                        return;
+                    }
+                    
+                    if (file.size > 2 * 1024 * 1024) {
+                        showToast('背景图片不能超过2MB');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // 更新选中状态
+                        bgOptions.forEach(opt => opt.classList.remove('selected'));
+                        
+                        // 保存到临时配置
+                        state.tempConfig.chatBackground = e.target.result;
+                        state.tempConfig.bgType = 'image';
+                        
+                        showToast('背景图片已上传，点击保存设置生效');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        function updateSettingsForm() {
+            // 更新头像预览
+            updateSettingsAvatarPreviews();
+            
+            // 更新颜色预览
+            updateSettingsColorPreviews();
+            
+            // 更新表情包
+            loadSettingsStickers('user');
+        }
+
+        function updateSettingsAvatarPreviews() {
+            // AI头像预览
+            const aiPreview = document.getElementById('ai-avatar-preview');
+            if (state.config.aiAvatar && state.config.aiAvatar.startsWith('data:image')) {
+                aiPreview.innerHTML = `<img src="${state.config.aiAvatar}" alt="AI头像" style="width:100%;height:100%;object-fit:cover;">`;
+            }
+            
+            // 用户头像预览
+            const userPreview = document.getElementById('user-avatar-preview');
+            if (state.config.userAvatar && state.config.userAvatar.startsWith('data:image')) {
+                userPreview.innerHTML = `<img src="${state.config.userAvatar}" alt="用户头像" style="width:100%;height:100%;object-fit:cover;">`;
+            }
+        }
+
+        function updateSettingsColorPreviews() {
+            const aiColorPreview = document.getElementById('ai-color-preview');
+            const userColorPreview = document.getElementById('user-color-preview');
+            
+            if (aiColorPreview) {
+                aiColorPreview.style.backgroundColor = state.config.aiColor;
+            }
+            
+            if (userColorPreview) {
+                userColorPreview.style.backgroundColor = state.config.userColor;
+            }
+        }
+
+        function saveSettings() {
+            // 获取表单值
+            const aiName = document.getElementById('settings-ai-name')?.value.trim() || state.config.aiName;
+            const userName = document.getElementById('settings-user-name')?.value.trim() || state.config.userName;
+            const aiPersonality = document.getElementById('settings-ai-personality')?.value.trim() || state.config.aiPersonality;
+            const memoryDepth = parseInt(document.getElementById('settings-memory-depth')?.value) || state.config.memoryDepth;
+            const aiColor = document.getElementById('ai-avatar-color')?.value || state.config.aiColor;
+            const userColor = document.getElementById('user-avatar-color')?.value || state.config.userColor;
+            
+            // 更新配置
+            state.config.aiName = aiName;
+            state.config.userName = userName;
+            state.config.aiPersonality = aiPersonality;
+            state.config.memoryDepth = memoryDepth;
+            state.config.aiColor = aiColor;
+            state.config.userColor = userColor;
+            
+            // 应用临时配置（上传的头像和背景）
+            if (state.tempConfig.aiAvatar) {
+                state.config.aiAvatar = state.tempConfig.aiAvatar;
+            }
+            if (state.tempConfig.userAvatar) {
+                state.config.userAvatar = state.tempConfig.userAvatar;
+            }
+            if (state.tempConfig.chatBackground) {
+                state.config.chatBackground = state.tempConfig.chatBackground;
+                state.config.bgType = state.tempConfig.bgType || 'color';
+            }
+            
+            // 清空临时配置
+            state.tempConfig = {};
+            
+            // 保存所有数据
+            saveAllData();
+            
+            // 更新UI
+            updateAIName();
+            applyBackground();
+            
+            // 关闭设置页面
+            closeSettings();
+            
+            showToast('设置已保存！');
+        }
+
+        // ==================== 辅助函数 ====================
+        function showTypingIndicator() {
+            const chatContent = document.querySelector('.chat-content-wrapper');
+            if (!chatContent) return;
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message message-ai';
+            typingDiv.id = 'typingIndicator';
+            
+            typingDiv.innerHTML = `
+                <div class="message-content-wrapper">
+                    ${getAvatarContent('ai')}
+                    <div class="typing-indicator">
+                                                <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            // 添加到聊天区域
+            chatContent.appendChild(typingDiv);
+            
+            // 滚动到底部
+            autoScrollToBottom();
+        }
+    
+
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    // ==================== 欢迎消息 ====================
+    function showWelcomeMessage() {
+        const hasHistory = state.conversationHistory.length > 0;
+        if (hasHistory) return;
+        
+        const greetings = [
+            `嗨 ${state.config.userName}，今天过得怎么样？`,
+            `宝宝终于来啦～想我没？`,
+            `今天忙啥呢，跟我说说`,
+            `在呢在呢，一直等你`,
+            `想你了 ${state.config.userName} 💕`
+        ];
+        
+        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+        
+        setTimeout(() => {
+            addMessage('ai', randomGreeting);
+        }, 500);
+    }
+
+    // ==================== 工具函数 ====================
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function autoScrollToBottom() {
+        const chatContent = document.getElementById('chatContent');
+        if (chatContent) {
+            setTimeout(() => {
+                chatContent.scrollTop = chatContent.scrollHeight;
+            }, 100);
+        }
+    }
+
+    function showToast(message) {
+        const existingToast = document.querySelector('.beiming-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = 'beiming-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            }
+        }, 2000);
+    }
+
+    // ==================== 页面功能函数 ====================
+    function openSettings() {
+        document.getElementById('mainContainer').classList.add('settings-open');
+        state.isSettingsOpen = true;
+        updateSettingsForm();
+    }
+
+    function closeSettings() {
+        document.getElementById('mainContainer').classList.remove('settings-open');
+        state.isSettingsOpen = false;
+    }
+
+    // ==================== 时间显示 ====================
+    function updateTimeTag() {
+        const now = new Date();
+        const hour = now.getHours();
+        let timeString;
+        
+        if (hour < 6) {
+            timeString = '凌晨';
+        } else if (hour < 12) {
+            timeString = '上午';
+        } else if (hour < 13) {
+            timeString = '中午';
+        } else if (hour < 18) {
+            timeString = '下午';
+        } else if (hour < 21) {
+            timeString = '晚上';
+        } else {
+            timeString = '深夜';
+        }
+        
+        const timeTag = document.getElementById('currentTime');
+        if (timeTag) {
+            timeTag.textContent = timeString;
+        }
+    }
+
+    // 初始化时间标签
+    updateTimeTag();
+    setInterval(updateTimeTag, 60000);
+
+    // ==================== 窗口大小调整 ====================
+    function handleResize() {
+        const isMobile = window.innerWidth <= 768;
+        
+        // 在移动设备上自动关闭面板
+        if (isMobile && (state.isStickerPanelOpen || state.isPlusMenuOpen)) {
+            toggleStickerPanel(false);
+            hidePlusMenu();
+        }
+    }
+
+    window.addEventListener('resize', handleResize);
+    
+    // ==================== 语音输入功能（预留） ====================
+    document.getElementById('voiceToggleBtn').addEventListener('click', function() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            showToast('语音功能开发中...');
+        } else {
+            showToast('当前浏览器不支持语音输入');
+        }
+    });
+
+    // ==================== 数据统计 ====================
+    function showStats() {
+        console.log('📊 当前统计:');
+        console.log('- 对话历史:', state.conversationHistory.length, '条');
+        console.log('- 对话轮次:', state.conversationRound);
+        console.log('- 用户表情包:', state.userStickers.length, '个');
+        console.log('- AI表情包:', state.aiStickers.length, '个');
+        console.log('- API调用:', state.apiStats.successCalls, '成功', state.apiStats.failedCalls, '失败');
+        console.log('- 当前配置:', state.config);
+    }
+
+    // 开发者快捷键：按Ctrl+Shift+S显示统计
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            showStats();
+        }
+    });
+
+    // 导出状态到全局（供调试）
+    window.beimingState = state;
+    window.beimingConfig = CONFIG;
+
+</script>
+
+</body>
+</html>
