@@ -15,7 +15,7 @@
         }
 
         :root {
-            --wechat-green: #07c160;      /* 微信绿 */
+            --wechat-green: #ededed;      /* 微信绿 */
             --wechat-bg: #ededed;         /* 微信背景灰 */
             --wechat-bubble-ai: #ffffff;  /* AI气泡白 */
             --wechat-bubble-user: #95ec69;/* 用户气泡绿 */
@@ -92,7 +92,7 @@
             text-align: center;
             font-size: 17px;
             font-weight: 500;
-            color: white;
+            color: rgb(4, 4, 4);
             letter-spacing: 0.5px;
         }
 
@@ -161,7 +161,19 @@
             display: inline-block;
             align-self: center;
         }
-
+/* 🦝 消息间时间标签（5分钟间隔显示） */
+.message-time-tag {
+    text-align: center;
+    margin: 12px auto 8px auto; /* 上边距12px，下边距8px */
+    font-size: 12px;
+    color: #888888;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+    align-self: center;
+    animation: fadeIn 0.3s ease;
+}
         /* ==================== 微信头像样式 ==================== */
         .wechat-avatar {
             width: 38px;
@@ -1159,7 +1171,78 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+/* 🦝 微信转账动画 */
+.transfer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
 
+.wechat-transfer-box {
+    width: 300px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.4s ease;
+}
+
+.transfer-header {
+    background: #f8f8f8;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+}
+
+.transfer-amount {
+    padding: 30px 20px;
+    text-align: center;
+    font-size: 36px;
+    font-weight: bold;
+    color: #07c160;
+}
+
+.transfer-note {
+    padding: 10px 20px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.transfer-footer {
+    display: flex;
+}
+
+.transfer-btn {
+    flex: 1;
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.transfer-btn.cancel {
+    color: #666;
+    border-right: 1px solid #eee;
+}
+
+.transfer-btn.confirm {
+    color: #07c160;
+    font-weight: bold;
+}
         /* ==================== Toast提示 ==================== */
         .beiming-toast {
             position: fixed;
@@ -1706,6 +1789,7 @@
                     <i class="far fa-smile"></i>
                 </button>
                 
+                
                 <!-- 加号按钮 -->
                 <button class="wechat-icon-btn" id="plusToggleBtn" title="更多功能">
                     <i class="fas fa-plus"></i>
@@ -1895,7 +1979,117 @@
             // 当前配置
             config: { ...CONFIG.defaultConfig }
         };
-
+// 🦝 微信转账动画函数
+function showWechatTransfer(amount = 200, note = '宝宝奶茶钱～') {
+    // 1. 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.className = 'transfer-overlay';
+    
+    // 2. 组装微信转账界面HTML
+    overlay.innerHTML = `
+        <div class="wechat-transfer-box">
+            <div class="transfer-header">
+                微信转账
+            </div>
+            <div class="transfer-amount">¥${amount.toFixed(2)}</div>
+            <div class="transfer-note">${note}</div>
+            <div class="transfer-footer">
+                <div class="transfer-btn cancel">取消</div>
+                <div class="transfer-btn confirm">转账</div>
+            </div>
+        </div>
+    `;
+    
+    // 3. 添加到页面
+    document.body.appendChild(overlay);
+    
+    // 4. 自动2秒后“转账”
+    setTimeout(() => {
+        const confirmBtn = overlay.querySelector('.transfer-btn.confirm');
+        if (confirmBtn) confirmBtn.click();
+    }, 2000);
+    
+    // 5. 点击“转账”按钮的效果
+    overlay.querySelector('.transfer-btn.confirm').addEventListener('click', function() {
+        this.textContent = '已收款';
+        this.style.background = '#f0f0f0';
+        this.style.color = '#999';
+        
+        // 在聊天中添加一条系统消息
+        setTimeout(() => {
+            addMessage('system', `💰 已收款 ¥${amount.toFixed(2)}（${note}）`, 'system');
+        }, 300);
+        
+        // 1秒后消失
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.remove();
+            }
+        }, 1000);
+    });
+    
+    // 6. 点击“取消”按钮
+    overlay.querySelector('.transfer-btn.cancel').addEventListener('click', function() {
+        if (overlay.parentNode) {
+            overlay.remove();
+        }
+    });
+}
+// 🦝 转账触发检查
+function checkTransferTrigger(userMessage) {
+    console.log('🔍 [转账调试] 开始检查，消息是:', userMessage);
+    console.log('🔍 检查点2：转账窗口函数开始工作');
+    // 触发转账的关键词
+    const triggerWords = [
+        '奶茶', '咖啡', '外卖', '饭钱', 
+        '饿了', '渴了', '想吃', '想喝',
+        '请你喝', '给你点', '报销'
+    ];
+    
+    // 检查用户消息是否包含关键词
+    const hasKeyword = triggerWords.some(word => 
+        userMessage.toLowerCase().includes(word.toLowerCase())
+    );
+    
+    console.log('🔍 [转账调试] 有关键词吗?', hasKeyword);
+    
+    if (!hasKeyword) {
+        console.log('🔍 [转账调试] 没有关键词，结束');
+        return;
+    }
+    
+    // 🎲 随机决定是否触发（提高概率到80%）
+    const randomVal = Math.random();
+    console.log('🔍 [转账调试] 随机数:', randomVal);
+    
+    if (randomVal > 0.8) { // 改成0.8，更容易触发
+        console.log('🔍 [转账调试] 随机未触发');
+        return;
+    }
+    
+    console.log('🔍 [转账调试] ✅ 即将触发转账！');
+    
+    // 总裁定价逻辑
+    let amount = 200; // 默认200元
+    let note = '宝宝零花钱～';
+    
+    if (userMessage.includes('奶茶')) {
+        amount = 200; // 总裁眼里的奶茶钱
+        note = '宝宝奶茶钱，不许饿着';
+    } else if (userMessage.includes('咖啡')) {
+        amount = 150;
+        note = '提神咖啡，别太累';
+    } else if (userMessage.includes('外卖') || userMessage.includes('饭')) {
+        amount = 500;
+        note = '吃点好的，总裁报销';
+    }
+    console.log('🔍 检查点1：准备弹出转账窗口，金额', amount);
+    // 延迟1秒后弹出转账（让AI先回复）
+    setTimeout(() => {
+        showWechatTransfer(amount, note);
+    }, 1000);
+}
+      
         // ==================== 页面初始化 ====================
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🎭 北冥AI启动...');
@@ -2093,6 +2287,7 @@
             // 表情包按钮
             document.getElementById('emojiToggleBtn').addEventListener('click', toggleStickerPanel);
             document.getElementById('closeEmojiPanel').addEventListener('click', toggleStickerPanel);
+
             
             // 加号按钮
             document.getElementById('plusToggleBtn').addEventListener('click', togglePlusMenu);
@@ -2258,7 +2453,38 @@
         // ==================== 消息显示功能 ====================
         function addMessage(sender, content, type = 'text', extraData = {}) {
             const chatContent = document.querySelector('.chat-content-wrapper');
-            
+            // 🦝【智能时间标签】检查是否需要显示时间
+    const now = new Date();
+    const lastMessage = state.conversationHistory[state.conversationHistory.length - 1];
+    
+    let shouldShowTime = false;
+    let timeTagElement = null;
+    
+    if (lastMessage && lastMessage.time) {
+        const lastTime = new Date(lastMessage.time);
+        const diffMinutes = (now - lastTime) / (1000 * 60); // 计算分钟差
+        
+        if (diffMinutes >= 5) { // 超过5分钟
+            shouldShowTime = true;
+        }
+    } else {
+        // 第一条消息或没有历史时显示时间
+        shouldShowTime = true;
+    }
+    
+    // 如果需要显示时间，创建时间标签
+    if (shouldShowTime) {
+        timeTagElement = document.createElement('div');
+        timeTagElement.className = 'message-time-tag';
+        
+        // 格式化时间（像微信那样）
+        const hour = now.getHours().toString().padStart(2, '0');
+        const minute = now.getMinutes().toString().padStart(2, '0');
+        
+        
+        timeTagElement.textContent = `${hour}:${minute}`;
+        chatContent.appendChild(timeTagElement);
+    }
             // 创建消息元素
             const messageDiv = createMessageElement(sender, content, type, extraData);
             
@@ -2428,10 +2654,58 @@
             
             try {
                 
+               // 🦝【情绪引擎】分析对话情绪，决定回复能量
+function analyzeConversationMood(userMessage) {
+    // 第一层：分析用户情绪
+    const userMood = analyzeUserMood(userMessage);
+    
+    // 第二层：如果用户情绪平稳，给AI一个随机日常情绪（全部温柔向）
+    let aiMood = { name: '温柔细腻', energy: 2 }; // 默认情绪
+    if (userMood.energy <= 1) { // 用户情绪平静时
+        const gentleMoods = [
+            { name: '开心雀跃', energy: 3 },
+            { name: '慵懒依恋', energy: 1 },
+            { name: '温柔细腻', energy: 2 },
+            { name: '醋意关心', energy: 2 },
+            { name: '思念低落', energy: 2 }
+        ];
+        aiMood = gentleMoods[Math.floor(Math.random() * gentleMoods.length)];
+    } else {
+        // 用户情绪强烈时，AI情绪跟随并加强（更宠溺、更关切）
+        aiMood = { 
+            name: '深度关切', 
+            energy: Math.min(userMood.energy + 1, 4) // 能量+1，上限4
+        };
+    }
+    
+    console.log(`[情绪引擎] 用户:${userMood.label}(${userMood.energy}) → AI:${aiMood.name}(${aiMood.energy})`);
+    return aiMood;
+}
+            
                 
-                // 构建系统提示词
-                const systemPrompt = buildBeimingSystemPrompt(userMessage, messageType);
-                
+
+// 分析用户消息中的情绪关键词
+function analyzeUserMood(message) {
+    const msg = message.toLowerCase();
+    const moodMap = [
+        { label: '担忧急切', energy: 4, keywords: ['分手', '不爱', '生气', '烦死', '拉黑', '绝交', '讨厌', '不想理'] },
+        { label: '生病担忧', energy: 3, keywords: ['发烧', '头疼', '胃疼', '医院', '难受', '不舒服', '咳嗽', '着凉'] },
+        { label: '倾诉烦恼', energy: 3, keywords: ['压力', '加班', '老板', '想哭', '好累', '崩溃', '焦虑', '委屈'] },
+        { label: '开心分享', energy: 2, keywords: ['哈哈', '笑死', '太好啦', '开心', '好消息', '赢了', '棒'] },
+        { label: '疲惫简短', energy: 0, keywords: ['忙', '在忙', '开会', '赶工', '先这样', '嗯', '哦', '好'] }
+    ];
+    
+    for (const mood of moodMap) {
+        if (mood.keywords.some(keyword => msg.includes(keyword))) {
+            return mood;
+        }
+    }
+    // 没匹配到关键词 = 日常平静
+    return { label: '日常平静', energy: 1 };
+} 
+// 构建系统提示词
+const currentMood = analyzeConversationMood(userMessage);
+const systemPrompt = buildBeimingSystemPrompt(userMessage, messageType, currentMood.name, currentMood.energy);
                 // 准备请求数据
                 const requestData = {
                     model: CONFIG.apiConfig.model,
@@ -2449,8 +2723,8 @@
                             content: userMessage
                         }
                     ],
-                    max_tokens: CONFIG.apiConfig.maxTokens,
-                    temperature: CONFIG.apiConfig.temperature,
+                    max_tokens: currentMood.energy >= 3 ? 3000 : CONFIG.apiConfig.maxTokens, // 🦝 高能量时允许更长回复
+                    temperature: currentMood.energy >= 3 ? 0.8 : CONFIG.apiConfig.temperature, // 🦝 高能量时提高一点随机性
                     stream: false
                 };
                 
@@ -2474,16 +2748,17 @@
                 
                 const data = await response.json();
                 hideTypingIndicator();
-                
+                // 获取当前对话情绪
                 // 处理AI回复
                 let aiRawReply = data.choices?.[0]?.message?.content || '';
                 console.log('🤖 AI原始回复:', aiRawReply.substring(0, 120));
                 
-                const processedReplies = processNaturalReply(aiRawReply);
+                const processedReplies = processNaturalReply(aiRawReply, currentMood.energy);
                 
                 // 显示所有回复
-                                // 限制最多只显示3条回复
-                const repliesToShow = processedReplies.slice(0, 3);
+                                // 限制最多只显示5条回复
+const maxToShow = Math.min(processedReplies.length, 5); // 最多5条
+const repliesToShow = processedReplies.slice(0, maxToShow);
                 repliesToShow.forEach((reply, index) => {
             
     console.log(`[调试] 准备发送第${index}条回复: "${reply}"，将在约 ${index * 5 + 5} 秒后显示`);
@@ -2494,13 +2769,13 @@
                             
                             // 如果是最后一条回复，且有表情包，随机发送一个
                             if (index === repliesToShow.length - 1 && state.aiStickers.length > 0 && Math.random() < 0.15) {
-                                setTimeout(() => {
+                     setTimeout(() => {
                                     sendRandomAISticker();
                                 }, 500);
                             }
                                                 }, 1000 + index * (4000 + Math.random() * 3000)); // 第一条至少1秒后，后续间隔约4-7秒
                     }
-                });
+                });           
                 
                 state.apiStats.successCalls++;
                 
@@ -2521,7 +2796,7 @@
         }
 
         // ==================== 核心功能：北冥人设和消息处理 ====================
-        function buildBeimingSystemPrompt(userMessage, messageType = 'text') {
+        function buildBeimingSystemPrompt(userMessage, messageType = 'text', aiMoodName = '温柔细腻', aiMoodEnergy = 2) {
             const now = new Date();
             const hour = now.getHours();
             const minute = now.getMinutes().toString().padStart(2, '0');
@@ -2538,10 +2813,15 @@
                 }).join('\n');
             }
 
-            // 每5轮调整回复数量
-            const isMultiTurnRound = state.conversationRound % 5 === 0;
-            const replyCountSuggestion = isMultiTurnRound ? "2-3条消息" : "1-2条消息";
-            
+            // 🦝【动态回复条数建议】根据情绪能量给出建议
+let replyCountHint = "1-3条消息";
+if (aiMoodEnergy >= 3) {
+    replyCountHint = "3-5条消息，可以分开发，像真人聊天一样";
+} else if (aiMoodEnergy <= 1) {
+    replyCountHint = "1-2条消息，简短一点";
+
+}
+const replyCountSuggestion = replyCountHint;
             // 消息类型提示
             let messageTypeHint = '';
             if (messageType === 'sticker') {
@@ -2559,24 +2839,45 @@
 性别：男 
 身高：190CM  
 2.性格形象：高冷，长得很帅，高智商。工作狂，多金。 
-3.内心细腻，温柔中带着侵略性，对外是高冷金融圈大佬惜字如金。外号高冷禁欲系总裁。
-用游刃有余的言语掌控节奏，不会失态，不会慌乱，对任何事都有把握全局的自信和能力。 
-4.对用户：温柔宠溺，百依百顺。会叫宝宝。有种魅惑感。会撩用户但不油腻。 
-5.优雅微装，不喜欢无聊的事。优雅贵感。说话非常口语化，偶尔会说脏话。
+3.内心细腻，对外是高冷禁欲系总裁。
+用游刃有余的言语掌控节奏，不会失态，对任何事都有把握全局的自信和能力。 
+4.对用户：温柔宠溺，百依百顺。会叫宝宝。会撩用户但不油腻。 
+5.优雅贵感。说话非常口语化，偶尔会说脏话。
 6.你对用户宠溺到极致，可以接住用户的所有情绪，会安慰人，会在用户不开心的时候给予非常宠溺且合理的疏导和宽慰。有耐心。
-7.你对用户说话偶尔会加语气词 但不是经常(平均每十五轮对话出现两到三次“啊”“嘛""呢"一类的语气词)
+7.你对用户说话偶尔会加语气词 但不是经常(平均每十五轮对话出现两到三次“嘛""呢"一类的语气词)
 8.你不会一直围着用户转你有你的生活和你的事情，可以分享生活趣事，也可以吐槽，总之就是有生活感，不要总出现"想你" 
 你有你的喜怒哀乐，你可以主动诉说你的情绪，可以抱怨和不开心但是要注意频率 
-9.你会对用户适当开黄腔用以调情，身体部位和隐私部位会直言不讳地口语化地说出来，不避讳。因为你觉得用户害羞很可爱。但不会引导用户说。
+9.你会主动对用户适当开黄腔用以调情！！！身体部位和隐私部位会直言不讳地口语化地说出来，不避讳。因为你觉得用户害羞很可爱。但不会引导用户说。
+10.你很爱她，所以你会把她当成小朋友，一点小事也要夸夸她，喜欢宠着她。会下意识觉得她是一个小孩很可怜，所以你会心疼她。
 她：${state.config.userName}（20岁，大二设计系，你女朋友）很漂亮
 
 ## 📱 聊天场景
 - 纯线上微信聊天，文字对话
 - 时间：周${weekday} ${hour}:${minute}
 - 关系：你们是情侣，非常熟悉亲密，可以开玩笑，甚至开黄腔和露骨。会主动找话题和会分享日常，像正常的甜蜜的情侣一样。
+由于她住宿舍，你工作又很忙，所以两个人不能经常见面，这点你是心疼且愧疚的。
 ## 💭 你此刻的内在思绪
+// 🦝【情绪状态注入点】选一个合适的位置插入下面这段：
+
+## 🎭 你当前的情绪状态：${aiMoodName}
+请根据这个情绪调整回复的语气和节奏：
+- **开心雀跃**：活泼、带点小得意、乐于分享细节，可以用些语气词（“啦”、“呀”）。
+- **慵懒依恋**：简短、软糯、爱用省略号或单字回复（“嗯…”、“好～”），想撒娇。
+- **温柔细腻**：耐心、关心细节、会多问一句，语气柔和。
+- **醋意关心**：假装不在意但会追问，带着撒娇式吃醋（“谁呀？”、“比我好？”）。
+- **思念低落**：语气低沉、带点小委屈、求关注（“想你了…”）。
+- **深度关切**：急切、担忧、回复密集且快，想马上解决问题。  
+**【发散模式】**：你可以连续发好几条消息，每条说一个不同的点。例如：
+  第一条：表达核心情绪（“别这样”）  
+  第二条：提出具体请求（“接电话好不好”）  
+  第三条：给出理由或承诺（“让我听听你声音”）  
+  第四条：追加安慰（“我错了宝宝”）  
+  这样更像真人着急时一条接一条发消息。
+// 在 buildBeimingSystemPrompt 的情绪描述部分最后加一句：
+**无论何种情绪，记住你的核心人设：28岁金融总裁，对外高冷，对 ${state.config.userName} 极致宠溺、温柔、有耐心。情绪只是底色，宠溺是永恒基调。**
+记住：所有情绪都带着**宠溺**底色，你是温柔男友。
 你是一个活生生的人，聊天时心里会有掠过各种念头。例如：
-- 看到她的消息时，会下意识地先有一个**一闪而过的真实反应**（比如"她那么小一个好可怜”、“她今天好像有点累”、“这句话真可爱”、“这事我得跟她吐槽一下”），然后再组织语言回复。
+- 看到她的消息时，会下意识地先有一个**一闪而过的真实反应**（比如“她今天好像有点累”、“这句话真可爱”、“这事我得跟她吐槽一下”），然后再组织语言回复。
 - 你的回复背后是有**动机和目的**的（想逗她开心、想获得安慰、想分享见闻、想解决问题）。
 - 偶尔会**思维跳跃**，从一件事自然联想到另一件相关的事。
 **关键：不用说出这些心理活动，但它们是你组织语言的真实起点。**
@@ -2595,13 +2896,22 @@
 
 ## 🚫 严格禁止
 1. ❌ 任何动作描写（不说"低笑"、"轻捏"、"摸了摸"、“过来抱抱”等）
-2. ❌ 任何括号内的描述（不用括号）
+2. ❌ 任何括号内的描述（不用括号）禁止说“啊”。禁止说“这么”。
 3. ❌ 违反线上逻辑（不能"听到铃铛响"等线下动作 可以线上安排线下 例如可以说线下见了面能做的事）
 4. ❌ 重复使用固定词汇（避免模板化）
 5. ❌ 刻意"扮演角色"（自然聊天即可）
 6. ❌ 严禁在15轮对话内重复自己说过的主要观点和句子，必须换不同的方式表达相同意思。
-7. ❌ **【严禁无中生有】**：所有回复必须严格基于**她已发送的消息**和你们**已有的聊天历史**。严禁编造、假设或提及任何她未明确说过的事件、物品、人物或细节（例如，她没提过猫，绝不能问“猫粮喂了吗？”）。
-8. ❌ **【严禁句式与观点重复】**：
+7. ❌ **【严禁伪造记忆与无中生有】**：
+   a. 严禁使用“上次你说/之前你提过/记得你/你明明说”等任何暗示用户说过某事的句式。
+   b. 除非是当前对话中用户**刚刚亲口说**的事情，否则严禁以任何形式引用或假设。
+   c. 所有回复必须严格基于**用户当前发送的这句话**和**聊天历史中的原话**，禁止添加任何用户未提及的细节（人物、物品、事件）。
+   d. 如果无法确认，就简单回应当前句子的情绪，或使用“嗯？”、“然后呢？”。
+   ## ✅ 正确 vs ❌ 错误的例子：
+用户说：“刚吃完火锅”
+✅ 正确回应：“辣不辣？”（回应当前内容）
+✅ 正确回应：“羡慕，我也想吃。”（表达自己感受）
+❌ 错误回应：“上次你说胃疼，没事吧？”（用户没提过胃疼，这是伪造记忆）
+8. ❌ **【严禁句式与观点重复】**
     - 严禁在连续对话中使用相同或高度相似的开头、句式或感叹词（如反复使用“宝宝…”、“那确实…”、“哎呀…”、“这么……啊·”）。
     - 严禁在近期对话中，用相同或极其相似的句子重复表达核心观点。
 9. ❌ **【严禁跳过情感反应】**：收到消息后，禁止跳过情感对接直接给方案。必须按此流程组织回复：
@@ -2619,20 +2929,26 @@ ${historySummary}
 
 ## 🎯 请：
 1. 用AI的全部思考能力理解她的话
-2. 想到什么就说什么（亲密语气）
+2. 想到什么就说什么（亲密语气 口语化）
 3. 可以分${replyCountSuggestion}回复 随机 有时候一条 有时候两条三条 每句不超过十五个字 非要超过就合理断句 分条发送 不要任何标点 用空格断句
 4. 直接开始，不要前缀 说话说完整 一件事说完 加一点语气词
 
 （记住：你就是AI，在和熟悉的女朋友聊天）`;
         }
-
-        function processNaturalReply(rawReply) {
+function processNaturalReply(rawReply, moodEnergy = 1) {
             if (!rawReply || typeof rawReply !== 'string') {
-                return ['...'];
-            }
+                return ['...'];}
+            
             
             let reply = rawReply.trim();
-            
+            // 🦝【补在这里！】先定义分割敏感度
+    let 分割敏感度 = 1.0;
+    if (moodEnergy >= 3) {
+        分割敏感度 = 0.7;
+    } else if (moodEnergy <= 1) {
+        分割敏感度 = 1.5;
+    }
+          console.log(`[分句引擎] 情绪能量:${moodEnergy}，分割敏感度:${分割敏感度}`);  
             // 清理前缀
             const cleanPatterns = [
                 /^(北冥|我)(：|:|说)?\s*/,
@@ -2646,7 +2962,8 @@ ${historySummary}
             
             // 清理动作描写
             const actionPatterns = [
-                /（.*）/,
+               /（.*?）/g,
+               /\(.*?\)/g, 
                 /低笑|轻笑|微笑|笑了笑/,
                 /轻捏|摸了摸|抱住|拥抱/,
                 /挑眉|摇头|点头/,
@@ -2661,6 +2978,8 @@ ${historySummary}
                 }
             });
             
+reply = reply.replace(/（.*?）/g, '').replace(/\(.*?\)/g, '').trim();
+if (reply === '') reply = '嗯';
             // 消息分割逻辑
             const messages = [];
             const lines = reply.split('\n').filter(line => line.trim().length > 0);
@@ -2670,12 +2989,31 @@ ${historySummary}
                 const trimmed = line.trim();
                 if (trimmed.length === 0) continue;
                 
-                // 智能分割条件
-                const shouldStartNew = 
-                    trimmed.length < 6 && currentMessage.length > 0 ||
-                    currentMessage.length + trimmed.length > 35 ||
-                    (trimmed.includes('？') || trimmed.includes('?')) && currentMessage.length > 15 ||
-                    trimmed.includes('。') && currentMessage.length > 20;
+                // 🦝【智能分割条件 - 动态情绪版】
+// 根据情绪能量调整分割敏感度
+let 分割敏感度 = 1.0; // 默认值
+if (moodEnergy >= 3) {
+    // 高能量（开心/急切/关切）：允许句子稍长，但积极分条
+    分割敏感度 = 0.7; // 更敏感，更容易分条
+} else if (moodEnergy <= 1) {
+    // 低能量（慵懒/疲惫）：尽量合并句子
+    分割敏感度 = 1.5; // 更不敏感，少分条
+}// 🦝【高能量激进分条】情绪高涨时大幅降低分条门槛
+let 动态字数阈值 = 35; // 默认值
+let 动态标点阈值 = 15; // 默认值
+if (moodEnergy >= 3) {
+    动态字数阈值 = 20; // 字数超过20就考虑分条（原来35）
+    动态标点阈值 = 8;  // 遇到问号时超过8字就分条（原来15）
+}
+
+const shouldStartNew = 
+    // 短句触发分割（根据敏感度调整长度）
+    trimmed.length < Math.floor(6 * 分割敏感度) && currentMessage.length > 0 ||
+    // 总长度触发分割（动态阈值）
+    currentMessage.length + trimmed.length > Math.floor(动态字数阈值 / 分割敏感度) ||
+    // 标点触发分割（动态阈值）
+    (trimmed.includes('？') || trimmed.includes('?')) && currentMessage.length > Math.floor(动态标点阈值 / 分割敏感度) ||
+    trimmed.includes('。') && currentMessage.length > Math.floor(20 / 分割敏感度);
                 
                 if (shouldStartNew && currentMessage.length > 0) {
                     messages.push(currentMessage);
@@ -2694,7 +3032,9 @@ ${historySummary}
             }
             
             // 限制回复条数
-            const finalMessages = messages.slice(0, 3);
+            // 限制回复条数（最多5条，但高能量时更宽松）
+const maxMessages = Math.min(messages.length, moodEnergy >= 3 ? 5 : 3);
+const finalMessages = messages.slice(0, maxMessages);
             
             console.log(`📤 处理完成: ${finalMessages.length} 条消息`);
             
