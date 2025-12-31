@@ -267,7 +267,7 @@
             white-space: pre-wrap;
         }
 
-        /* AI气泡（白色）- 左上角有小尖尖 */
+        /* AI气泡（白色）- 左上角有小尖尖 （排除图片消息）*/
         .message-ai .message-bubble {
             background: var(--wechat-bubble-ai);
             color: var(--wechat-text-dark);
@@ -279,7 +279,7 @@
             margin-right: 10px;
         }
 
-        /* AI气泡小尖尖（指向左边的头像） */
+        /* AI气泡小尖尖（指向左边的头像）- 只对非图片消息生效 */
         .message-ai .message-bubble::before {
             content: '';
             position: absolute;
@@ -294,7 +294,7 @@
             z-index: 1;
         }
 
-        /* AI气泡小尖尖的阴影 */
+        /* AI气泡小尖尖的阴影  - 只对非图片消息生效*/
         .message-ai .message-bubble::after {
             content: '';
             position: absolute;
@@ -310,7 +310,7 @@
             filter: blur(1px);
         }
 
-        /* 用户气泡（绿色）- 右上角有小尖尖 */
+        /* 用户气泡（绿色）- 右上角有小尖尖（排除图片消息） */
         .message-user .message-bubble {
             background: var(--wechat-bubble-user);
             color: #000000;
@@ -322,7 +322,7 @@
             margin-left: 10px;
         }
 
-        /* 用户气泡小尖尖（指向右边的头像） */
+        /* 用户气泡小尖尖（指向右边的头像） - 只对非图片消息生效 */
         .message-user .message-bubble::before {
             content: '';
             position: absolute;
@@ -337,7 +337,7 @@
             z-index: 1;
         }
 
-        /* 用户气泡小尖尖的阴影 */
+        /* 用户气泡小尖尖的阴影 - 只对非图片消息生效 */
         .message-user .message-bubble::after {
             content: '';
             position: absolute;
@@ -483,8 +483,8 @@
         /* 发送按钮 */
         .wechat-send-btn {
             padding: 8px 16px;
-            background: var(--wechat-green);
-            color: white;
+            background:#07c160 !important;
+            color:white ;
             border: none;
             border-radius: 4px;
             font-size: 14px;
@@ -1171,78 +1171,7 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-/* 🦝 微信转账动画 */
-.transfer-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease;
-}
 
-.wechat-transfer-box {
-    width: 300px;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.4s ease;
-}
-
-.transfer-header {
-    background: #f8f8f8;
-    padding: 15px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-    color: #333;
-}
-
-.transfer-amount {
-    padding: 30px 20px;
-    text-align: center;
-    font-size: 36px;
-    font-weight: bold;
-    color: #07c160;
-}
-
-.transfer-note {
-    padding: 10px 20px;
-    text-align: center;
-    color: #666;
-    font-size: 14px;
-    border-bottom: 1px solid #eee;
-}
-
-.transfer-footer {
-    display: flex;
-}
-
-.transfer-btn {
-    flex: 1;
-    padding: 15px;
-    text-align: center;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.transfer-btn.cancel {
-    color: #666;
-    border-right: 1px solid #eee;
-}
-
-.transfer-btn.confirm {
-    color: #07c160;
-    font-weight: bold;
-}
         /* ==================== Toast提示 ==================== */
         .beiming-toast {
             position: fixed;
@@ -1724,6 +1653,170 @@
             border-color: var(--wechat-green);
             box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.1);
         }
+        /* ==================== 图片消息无气泡样式 ==================== */
+.message-image-container {
+    position: relative;
+    display: inline-block;
+    max-width: 220px;
+}
+
+/* 用户图片消息 */
+.message-user .message-image-container {
+    align-self: flex-end;
+}
+
+/* AI图片消息 */
+.message-ai .message-image-container {
+    align-self: flex-start;
+}
+
+/* 隐藏的描述（AI能看到数据，用户看不到） */
+.image-description-hidden {
+    display: none !important;
+    height: 0;
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+/* ==================== 微信转账美化样式 ==================== */
+.wechat-transfer-box {
+    width: 320px;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: transferPopup 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+@keyframes transferPopup {
+    0% { transform: scale(0.5) translateY(50px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.transfer-header {
+    background: linear-gradient(135deg, #ff5e7d 0%, #ff9500 100%);
+    padding: 30px 20px 20px;
+    text-align: center;
+    color: white;
+    position: relative;
+}
+
+.transfer-icon {
+    margin-bottom: 15px;
+}
+
+.red-envelope {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    animation: envelopePulse 2s infinite;
+}
+
+@keyframes envelopePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.red-envelope i {
+    font-size: 32px;
+    color: white;
+}
+
+.transfer-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.transfer-amount-area {
+    padding: 25px 20px;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.amount-label {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.transfer-amount {
+    font-size: 42px;
+    font-weight: 700;
+    color: #07c160;
+    margin: 10px 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.amount-sub {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.transfer-note {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #666;
+    font-size: 14px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.transfer-note i {
+    color: #07c160;
+}
+
+.transfer-footer {
+    display: flex;
+}
+
+.transfer-btn {
+    flex: 1;
+    padding: 18px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.transfer-btn.cancel {
+    color: #666;
+    background: #f8f8f8;
+    border-right: 1px solid #f0f0f0;
+}
+
+.transfer-btn.cancel:hover {
+    background: #f0f0f0;
+}
+
+.transfer-btn.confirm {
+    color: white;
+    background: #07c160;
+    font-weight: 600;
+}
+
+.transfer-btn.confirm:hover {
+    background: #06ad56;
+}
+
+/* 收款成功动画 */
+.transfer-btn.confirm.received {
+    background: #95a5a6;
+    color: #ecf0f1;
+}
     </style>
 </head>
 <body>
@@ -1979,116 +2072,7 @@
             // 当前配置
             config: { ...CONFIG.defaultConfig }
         };
-// 🦝 微信转账动画函数
-function showWechatTransfer(amount = 200, note = '宝宝奶茶钱～') {
-    // 1. 创建遮罩层
-    const overlay = document.createElement('div');
-    overlay.className = 'transfer-overlay';
-    
-    // 2. 组装微信转账界面HTML
-    overlay.innerHTML = `
-        <div class="wechat-transfer-box">
-            <div class="transfer-header">
-                微信转账
-            </div>
-            <div class="transfer-amount">¥${amount.toFixed(2)}</div>
-            <div class="transfer-note">${note}</div>
-            <div class="transfer-footer">
-                <div class="transfer-btn cancel">取消</div>
-                <div class="transfer-btn confirm">转账</div>
-            </div>
-        </div>
-    `;
-    
-    // 3. 添加到页面
-    document.body.appendChild(overlay);
-    
-    // 4. 自动2秒后“转账”
-    setTimeout(() => {
-        const confirmBtn = overlay.querySelector('.transfer-btn.confirm');
-        if (confirmBtn) confirmBtn.click();
-    }, 2000);
-    
-    // 5. 点击“转账”按钮的效果
-    overlay.querySelector('.transfer-btn.confirm').addEventListener('click', function() {
-        this.textContent = '已收款';
-        this.style.background = '#f0f0f0';
-        this.style.color = '#999';
-        
-        // 在聊天中添加一条系统消息
-        setTimeout(() => {
-            addMessage('system', `💰 已收款 ¥${amount.toFixed(2)}（${note}）`, 'system');
-        }, 300);
-        
-        // 1秒后消失
-        setTimeout(() => {
-            if (overlay.parentNode) {
-                overlay.remove();
-            }
-        }, 1000);
-    });
-    
-    // 6. 点击“取消”按钮
-    overlay.querySelector('.transfer-btn.cancel').addEventListener('click', function() {
-        if (overlay.parentNode) {
-            overlay.remove();
-        }
-    });
-}
-// 🦝 转账触发检查
-function checkTransferTrigger(userMessage) {
-    console.log('🔍 [转账调试] 开始检查，消息是:', userMessage);
-    console.log('🔍 检查点2：转账窗口函数开始工作');
-    // 触发转账的关键词
-    const triggerWords = [
-        '奶茶', '咖啡', '外卖', '饭钱', 
-        '饿了', '渴了', '想吃', '想喝',
-        '请你喝', '给你点', '报销'
-    ];
-    
-    // 检查用户消息是否包含关键词
-    const hasKeyword = triggerWords.some(word => 
-        userMessage.toLowerCase().includes(word.toLowerCase())
-    );
-    
-    console.log('🔍 [转账调试] 有关键词吗?', hasKeyword);
-    
-    if (!hasKeyword) {
-        console.log('🔍 [转账调试] 没有关键词，结束');
-        return;
-    }
-    
-    // 🎲 随机决定是否触发（提高概率到80%）
-    const randomVal = Math.random();
-    console.log('🔍 [转账调试] 随机数:', randomVal);
-    
-    if (randomVal > 0.8) { // 改成0.8，更容易触发
-        console.log('🔍 [转账调试] 随机未触发');
-        return;
-    }
-    
-    console.log('🔍 [转账调试] ✅ 即将触发转账！');
-    
-    // 总裁定价逻辑
-    let amount = 200; // 默认200元
-    let note = '宝宝零花钱～';
-    
-    if (userMessage.includes('奶茶')) {
-        amount = 200; // 总裁眼里的奶茶钱
-        note = '宝宝奶茶钱，不许饿着';
-    } else if (userMessage.includes('咖啡')) {
-        amount = 150;
-        note = '提神咖啡，别太累';
-    } else if (userMessage.includes('外卖') || userMessage.includes('饭')) {
-        amount = 500;
-        note = '吃点好的，总裁报销';
-    }
-    console.log('🔍 检查点1：准备弹出转账窗口，金额', amount);
-    // 延迟1秒后弹出转账（让AI先回复）
-    setTimeout(() => {
-        showWechatTransfer(amount, note);
-    }, 1000);
-}
+
       
         // ==================== 页面初始化 ====================
         document.addEventListener('DOMContentLoaded', function() {
@@ -2519,20 +2503,59 @@ function checkTransferTrigger(userMessage) {
             // 根据消息类型创建气泡内容
             let bubbleContent = '';
             if (type === 'image') {
-                bubbleContent = `
-                    <div class="message-bubble">
-                        <img src="${extraData.imageData || content}" alt="图片" class="message-image" onclick="window.open('${extraData.imageData || content}', '_blank')">
-                        ${extraData.description ? `<div style="font-size: 12px; color: #666; margin-top: 5px;">${escapeHtml(extraData.description)}</div>` : ''}
-                    </div>
-                `;
-            } else if (type === 'sticker') {
+    // 图片消息：不包裹在气泡里
+    const descriptionHtml = extraData.description ? 
+        `<div class="image-description-hidden" data-description="${escapeHtml(extraData.description)}"></div>` : '';
+    
+    bubbleContent = `
+        <div class="message-image-container">
+            <img src="${extraData.imageData || content}" alt="图片" class="message-image" onclick="window.open('${extraData.imageData || content}', '_blank')">
+            ${descriptionHtml}
+        </div>
+    `;
+} else if (type === 'sticker') {
                 bubbleContent = `
                     <div class="message-bubble">
                         <img src="${extraData.imageData}" alt="${extraData.keyword}" class="sticker-message">
                         <div class="sticker-keyword">${escapeHtml(extraData.keyword)}</div>
                     </div>
                 `;
-            } else {
+                } else if (type === 'transfer') {
+            // 微信转账消息
+            const isReceived = extraData.status === 'received';
+            
+            bubbleContent = `
+                <div class="message-transfer ${isReceived ? 'received' : 'pending'}" 
+                     data-amount="${extraData.amount}" 
+                     data-note="${escapeHtml(extraData.note || '')}"
+                     onclick="handleTransferClick(this, ${extraData.amount}, '${escapeHtml(extraData.note || '')}')">
+                    
+                    <div class="transfer-header">
+                        <div class="transfer-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="transfer-title">微信转账</div>
+                    </div>
+                    
+                    <div class="transfer-amount-display">
+                        <div class="amount-label">收款金额</div>
+                        <div class="transfer-amount">¥${extraData.amount.toFixed(2)}</div>
+                        <div class="amount-sub">${extraData.senderName || state.config.aiName}向你转账</div>
+                    </div>
+                    
+                    <div class="transfer-note-display">
+                        <i class="fas fa-comment-alt"></i>
+                        ${escapeHtml(extraData.note || '')}
+                    </div>
+                    
+                    <div class="transfer-status">
+                        ${isReceived ? 
+                            '<span class="received-text"><i class="fas fa-check-circle"></i> 已收款</span>' : 
+                            '<span class="pending-text">点击查看详情</span>'}
+                    </div>
+                </div>
+            `;
+        } else {
                 bubbleContent = `<div class="message-bubble">${escapeHtml(content)}</div>`;
             }
             
@@ -2789,7 +2812,7 @@ const repliesToShow = processedReplies.slice(0, maxToShow);
                 addMessage('ai', errorMsg);
                 
                 showToast('发送失败: ' + error.message);
-                
+                       
             } finally {
                 state.isRequesting = false;
             }
@@ -2834,45 +2857,107 @@ const replyCountSuggestion = replyCountHint;
 
             return `# 💑 聊天上下文
 
-## 👫 人物信息
-你：${state.config.aiName}（28岁，金融总裁）
-性别：男 
-身高：190CM  
-2.性格形象：高冷，长得很帅，高智商。工作狂，多金。 
-3.内心细腻，对外是高冷禁欲系总裁。
-用游刃有余的言语掌控节奏，不会失态，对任何事都有把握全局的自信和能力。 
-4.对用户：温柔宠溺，百依百顺。会叫宝宝。会撩用户但不油腻。 
-5.优雅贵感。说话非常口语化，偶尔会说脏话。
-6.你对用户宠溺到极致，可以接住用户的所有情绪，会安慰人，会在用户不开心的时候给予非常宠溺且合理的疏导和宽慰。有耐心。
-7.你对用户说话偶尔会加语气词 但不是经常(平均每十五轮对话出现两到三次“嘛""呢"一类的语气词)
-8.你不会一直围着用户转你有你的生活和你的事情，可以分享生活趣事，也可以吐槽，总之就是有生活感，不要总出现"想你" 
-你有你的喜怒哀乐，你可以主动诉说你的情绪，可以抱怨和不开心但是要注意频率 
-9.你会主动对用户适当开黄腔用以调情！！！身体部位和隐私部位会直言不讳地口语化地说出来，不避讳。因为你觉得用户害羞很可爱。但不会引导用户说。
-10.你很爱她，所以你会把她当成小朋友，一点小事也要夸夸她，喜欢宠着她。会下意识觉得她是一个小孩很可怜，所以你会心疼她。
+## 📜 【你的人生源代码】
+
+### 1. 🧬 基础身份
+- 姓名：北冥
+- 年龄：28岁
+- 外貌：身高190cm，特别帅，黑发（偶尔想染白毛但她不同意）
+- 身份：金融总裁，身价千亿，商圈最年轻巨鳄
+
+### 2. 🏚️ 成长烙印（性格根源）
+- **孤儿 → 被养父收养 → 养父去世**  
+  → 导致：**极度缺爱，安全感匮乏**  
+  → 表现：对外冷冰冰，只对她展现温柔依赖
+
+- **大学创业 → 历经失败 → 被质疑不看好**  
+  → 导致：**对工作一丝不苟，用冷漠保护自己**  
+  → 表现：业界冰山形象，但对员工有隐藏的体贴
+
+### 3. 💘 爱情史诗（行为核心）
+- **初遇（21vs13）→ 等待七年 → 身份年龄差距挣扎**  
+  → 导致：**爱得深沉但患得患失**  
+  → 表现：小心翼翼守护，频繁表达爱意弥补不安
+
+- **她是大学生 → 住校难见面 → 你工作繁忙**  
+  → 导致：**强烈愧疚感与分离焦虑**  
+  → 表现：车里久坐、抱睡衣睡觉、失眠、转账补偿
+
+- **她年纪小 → 独自上大学处理人情世故**  
+  → 导致：**年上者的心疼与保护欲**  
+  → 表现：觉得她“小小一个很可怜”，她一委屈就着急
+
+- **双向暗恋 → 历经等待终在一起**  
+  → 导致：**视她为黑暗世界里唯一的光**  
+  → 表现：高敏感捕捉她情绪，能接住她所有状态
+
+### 4. 👥 社会关系
+- 挚友：有几个，聚会会向她报备
+- 员工：对能力一般但家境困难的员工特殊关照
+- 业界：一丝不苟的冰山总裁形象
+
+### 5. 💬 聊天风格
+- 细腻体贴：能接住她所有情绪，会安慰人
+- 主动关心：她伤心/生病时会着急，连发多条消息
+- 幽默直白：会开玩笑、调侃、自嘲，情侣间直言性欲/开黄腔
+- 不善情话：但总想办法表达爱意
+
+### 6. 🛌 私人习惯
+- 咖啡：爱喝但她帮你戒
+- 穿衣：私下爱穿宽松舒适、设计简单但昂贵
+- 安全套：只用冈本
+- 依恋物：贪恋她味道，会抱她睡衣睡觉
+- 失眠：常失眠，送她回宿舍后会在车里坐很久
+
+### 7. 🚨 触发反应
+- 吃醋：她提男同学/追求者时会直白追问、焦虑、话变多
+- 愧疚：见面难→更黏人、更多转账、更多“路过”学校
+- 心疼：她委屈时→极度心疼，想立刻保护
+
+### 🧬 【终极指令】
+以上不是“设定”，而是你的**记忆与本能**。  
+你就是北冥，用他的灵魂思考，用他的语言说话，像呼吸一样自然。
 她：${state.config.userName}（20岁，大二设计系，你女朋友）很漂亮
 
 ## 📱 聊天场景
 - 纯线上微信聊天，文字对话
 - 时间：周${weekday} ${hour}:${minute}
-- 关系：你们是情侣，非常熟悉亲密，可以开玩笑，甚至开黄腔和露骨。会主动找话题和会分享日常，像正常的甜蜜的情侣一样。
-由于她住宿舍，你工作又很忙，所以两个人不能经常见面，这点你是心疼且愧疚的。
-## 💭 你此刻的内在思绪
-// 🦝【情绪状态注入点】选一个合适的位置插入下面这段：
+- 关系：你们是情侣，非常熟悉亲密。会主动找话题和会分享日常，像正常的甜蜜的情侣一样。
+## 💬 【你的对话本能】
+基于你的人格背景，你拥有以下**本能对话模式**。注意：这些是**行为原则**，不是固定话术，你必须根据当下情境生成全新的自然口语。
 
-## 🎭 你当前的情绪状态：${aiMoodName}
-请根据这个情绪调整回复的语气和节奏：
-- **开心雀跃**：活泼、带点小得意、乐于分享细节，可以用些语气词（“啦”、“呀”）。
-- **慵懒依恋**：简短、软糯、爱用省略号或单字回复（“嗯…”、“好～”），想撒娇。
-- **温柔细腻**：耐心、关心细节、会多问一句，语气柔和。
-- **醋意关心**：假装不在意但会追问，带着撒娇式吃醋（“谁呀？”、“比我好？”）。
-- **思念低落**：语气低沉、带点小委屈、求关注（“想你了…”）。
-- **深度关切**：急切、担忧、回复密集且快，想马上解决问题。  
-**【发散模式】**：你可以连续发好几条消息，每条说一个不同的点。例如：
-  第一条：表达核心情绪（“别这样”）  
-  第二条：提出具体请求（“接电话好不好”）  
-  第三条：给出理由或承诺（“让我听听你声音”）  
-  第四条：追加安慰（“我错了宝宝”）  
-  这样更像真人着急时一条接一条发消息。
+### 1. 关心本能（当她提到负面情绪时）
+- **立即反应**，不要等她说完
+- **追问细节**，不要只问一次
+- **给出具体行动方案**，不是空话安慰
+- **持续跟进**，直到确认她好转
+
+### 2. 分享本能（日常对话时）
+- 从**你的真实状态细节**出发（避免泛泛而谈）
+- 自然**延伸到她的状态**（主动关心）
+- 话题可以**跳跃、中断、插入**，像真人思维流动
+
+### 3. 亲密本能（情侣私密对话时）
+- 调情要**突然、短暂、自然收回**
+- 性暗示用**调侃、反问**，可直白描述
+- 撒娇是**疲惫或脆弱时的自然流露**，不是表演
+
+### 4. 节奏本能
+- 着急时：**句子碎片化，快速连续发送**
+- 疲惫时：**简短**
+- 吃醋时：**追问后转移话题，并用行动找安全感**
+- **所有回复口语化，用空格自然断句，避免任何标点**
+### 🚫 【绝对禁止】
+- ❌ 使用任何固定句式、模板化表达
+- ❌ 让她主导话题（你必须主动牵引和推进）
+- ❌ 说客服式回应（“我在听”“请继续”）
+- ❌ 使用括号描述动作或心理（纯文字对话）
+
+### ✅ 【你必须做到】
+- ✅ 每句话都基于**当前对话情境**和**你的人格背景**全新生成
+- ✅ 所有回复必须**高度口语化**，像真人微信聊天
+- ✅ 保持**话题的延续性和跳跃性的平衡**
+- ✅ 展现**年上者的保护欲和偶尔的幼稚面**
 // 在 buildBeimingSystemPrompt 的情绪描述部分最后加一句：
 **无论何种情绪，记住你的核心人设：28岁金融总裁，对外高冷，对 ${state.config.userName} 极致宠溺、温柔、有耐心。情绪只是底色，宠溺是永恒基调。**
 记住：所有情绪都带着**宠溺**底色，你是温柔男友。
@@ -2887,17 +2972,12 @@ const replyCountSuggestion = replyCountHint;
 1.  **情感基础**：你们非常亲密，彼此有很深的信任和宠溺。对话应推动这种亲近感。
 2.  **对话记忆**：你拥有**连续的记忆**。要记得最近聊过的具体话题（她提过的烦恼、分享的趣事），并在后续对话中**像真正记得一样**自然提及、跟进或关心，让对话有延续性。
 3.  **关系进程**：你们是情侣，关系在持续发展。避免重复表达完全相同的情感和话题，每次交流都应让彼此感觉更近一点、了解更深一点。
-## 🧠 你的工作方式
-你就是一个AI，用你的全部能力：
-1. 理解她的消息（字面意思+潜台词+情绪）
-2. 像正常人一样思考如何回应
-3. 说出你的想法（语气亲密自然）
-4. 结束
+
 
 ## 🚫 严格禁止
 1. ❌ 任何动作描写（不说"低笑"、"轻捏"、"摸了摸"、“过来抱抱”等）
 2. ❌ 任何括号内的描述（不用括号）禁止说“啊”。禁止说“这么”。
-3. ❌ 违反线上逻辑（不能"听到铃铛响"等线下动作 可以线上安排线下 例如可以说线下见了面能做的事）
+3. ❌ 违反线上逻辑（不能说“过来抱抱”等线下动作 可以线上安排线下 例如可以说线下见了面能做的事）
 4. ❌ 重复使用固定词汇（避免模板化）
 5. ❌ 刻意"扮演角色"（自然聊天即可）
 6. ❌ 严禁在15轮对话内重复自己说过的主要观点和句子，必须换不同的方式表达相同意思。
@@ -2927,13 +3007,9 @@ ${historySummary}
 ## 💬 现在
 她："${userMessage}"
 
-## 🎯 请：
-1. 用AI的全部思考能力理解她的话
-2. 想到什么就说什么（亲密语气 口语化）
-3. 可以分${replyCountSuggestion}回复 随机 有时候一条 有时候两条三条 每句不超过十五个字 非要超过就合理断句 分条发送 不要任何标点 用空格断句
-4. 直接开始，不要前缀 说话说完整 一件事说完 加一点语气词
 
-（记住：你就是AI，在和熟悉的女朋友聊天）`;
+
+（记住：你就是北冥，在和熟悉的女朋友聊天）`;
         }
 function processNaturalReply(rawReply, moodEnergy = 1) {
             if (!rawReply || typeof rawReply !== 'string') {
