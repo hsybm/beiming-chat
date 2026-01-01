@@ -1820,17 +1820,20 @@
 /* ==================== 定时消息面板样式 ==================== */
 .schedule-panel {
     position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 320px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 280px; /* 缩小宽度 */
+    max-width: 90vw; /* 手机端限制 */
+    max-height: 70vh; /* 限制高度 */
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     display: none;
     animation: slideUp 0.3s ease;
+    overflow-y: auto; /* 内容过多可滚动 */
 }
-
 .schedule-panel.show {
     display: block;
 }
@@ -1872,19 +1875,19 @@
 }
 
 .panel-body {
-    padding: 20px;
-    max-height: 400px;
+    padding: 15px; /* 减少内边距 */
+    max-height: 300px; /* 降低最大高度 */
     overflow-y: auto;
 }
 
 .schedule-option {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
+    gap: 12px; /* 缩小间距 */
+    padding: 12px; /* 缩小内边距 */
     border: 2px solid #e0e0e0;
     border-radius: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 10px; /* 缩小下边距 */
     cursor: pointer;
     transition: all 0.3s;
 }
@@ -1899,14 +1902,14 @@
 }
 
 .option-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px; /* 缩小 */
+    height: 36px; /* 缩小 */
     background: #f0f0f0;
-    border-radius: 10px;
+    border-radius: 8px; /* 圆角缩小 */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px; /* 图标缩小 */
     color: #2c3e50;
 }
 
@@ -1961,10 +1964,10 @@
 
 .time-inputs input {
     flex: 1;
-    padding: 12px;
+    padding: 10px; /* 缩小 */
     border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px; /* 圆角缩小 */
+    font-size: 14px; /* 字体缩小 */
     text-align: center;
 }
 
@@ -1975,10 +1978,10 @@
 
 input[type="text"], input[type="datetime-local"] {
     width: 100%;
-    padding: 12px;
+    padding: 10px; /* 缩小 */
     border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px; /* 圆角缩小 */
+    font-size: 13px; /* 字体缩小 */
     box-sizing: border-box;
 }
 
@@ -1998,19 +2001,18 @@ input[type="text"]:focus, input[type="datetime-local"]:focus {
 
 .panel-btn {
     flex: 1;
-    padding: 14px;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 12px; /* 缩小 */
+    border-radius: 6px; /* 圆角缩小 */
+    font-size: 13px; /* 字体缩小 */
     font-weight: 500;
     cursor: pointer;
     border: 2px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px; /* 缩小间距 */
     transition: all 0.2s;
 }
-
 .panel-btn.cancel {
     background: #f8f8f8;
     border-color: #e0e0e0;
@@ -2109,10 +2111,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
                 <button class="wechat-icon-btn" id="emojiToggleBtn" title="表情包">
                     <i class="far fa-smile"></i>
                 </button>
-                <!-- 🦝 定时消息按钮 -->
-            <button class="wechat-icon-btn" id="scheduleBtn" title="定时消息">
-                <i class="far fa-clock"></i>
-            </button>
+             
                 
                 <!-- 加号按钮 -->
                 <button class="wechat-icon-btn" id="plusToggleBtn" title="更多功能">
@@ -2164,6 +2163,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
                         </div>
                         <div class="plus-menu-text">传表情包</div>
                     </div>
+                                    <div class="plus-menu-item" id="scheduleMenuBtn">
+                    <div class="plus-menu-icon" style="background: #f39c12;">
+                        <i class="far fa-clock"></i>
+                    </div>
+                    <div class="plus-menu-text">定时消息</div>
+                </div>
                     <div class="plus-menu-item">
                         <div class="plus-menu-icon">
                             <i class="fas fa-map-marker-alt"></i>
@@ -4966,9 +4971,10 @@ async function triggerAnxietyResponse(silenceMinutes) {
 // 🦝 定时消息队列
 const scheduleQueue = [];
 
-// 显示/隐藏定时面板
-document.getElementById('scheduleBtn')?.addEventListener('click', function() {
+// 显示/隐藏定时面板（从加号菜单打开）
+document.getElementById('scheduleMenuBtn')?.addEventListener('click', function() {
     document.getElementById('schedulePanel').classList.add('show');
+    hidePlusMenu(); // 同时关闭加号菜单
 });
 
 document.getElementById('closeSchedulePanel')?.addEventListener('click', closeSchedulePanel);
