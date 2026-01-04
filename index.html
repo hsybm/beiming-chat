@@ -4588,18 +4588,33 @@ function sendActiveMessageToChat(message) {
     
     console.log(`💌 北冥主动说: "${message}"`);
     
-    // 1. 添加到聊天界面
-    addMessage('ai', message);
+    // 🦝【关键修复】先获取当前时间，用于时间比较
+    const currentTime = new Date();
+    const currentTimeISO = currentTime.toISOString();
     
-    // 2. 添加到历史记录（标记为主动）
-    state.conversationHistory.push({
+    // 1. 先添加到历史记录（这样addMessage能计算正确的时间差）
+    const newMsgObj = {
         sender: 'ai',
         message: message,
         type: 'text',
-        time: new Date().toISOString(),
+        time: currentTimeISO,
         isActive: true,
-        triggerTime: new Date().toLocaleTimeString()
+        triggerTime: currentTime.toLocaleTimeString()
+    };
+    
+    // 临时添加到历史，让addMessage能检测到时间差
+    state.conversationHistory.push(newMsgObj);
+    
+    // 2. 再添加到聊天界面（会自动触发时间标签检查）
+    addMessage('ai', message, 'text', { 
+        time: currentTimeISO,
+        isActive: true 
     });
+    
+    // 3. 保存数据（移除临时添加的重复记录）
+    // 注意：addMessage内部已经添加了一次，所以这里要移除重复
+    state.conversationHistory.pop(); // 移除刚添加的
+    state.conversationHistory.push(newMsgObj); // 用正确的对象
     
     // 3. 随机触发转账（符合人设）
     if (message.includes('转账') || message.includes('打钱') || Math.random() < 0.2) {
